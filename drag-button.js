@@ -30,3 +30,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const button = document.querySelector(".return-button");
   if (button) makeButtonDraggable(button);
 });
+// Desactivar clic derecho solo sobre el botón de regresar
+document.addEventListener("DOMContentLoaded", () => {
+  const button = document.querySelector(".return-button");
+  if (button) {
+    button.addEventListener("contextmenu", (event) => {
+      event.preventDefault(); // Bloquea el menú de clic derecho
+    });
+  }
+});
+
