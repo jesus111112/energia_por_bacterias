@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celda de Combustible Microbiana - Libro Interactivo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden; 
+        }
+
+        .book-container {
+            perspective: 2000px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .book {
+            position: relative;
+            width: 100%;
+            height: 650px;
+            display: flex;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .page {
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to bottom, #fefefe 0%, #f8f8f8 100%);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .page-left {
+            border-right: 2px solid #ddd;
+            background: linear-gradient(to bottom left, #ffffff 0%, #f5f5f5 100%);
+        }
+
+        .page-right {
+            background: linear-gradient(to bottom right, #ffffff 0%, #f5f5f5 100%);
+        }
+
+        .page-content {
+            padding: 40px;
+            min-height: 100%;
+        }
+
+        .page::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .page::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .page::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .page::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 2em;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #34495e;
+            font-size: 1.5em;
+            margin: 25px 0 15px 0;
+            border-left: 5px solid #667eea;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #555;
+            font-size: 1.2em;
+            margin: 20px 0 10px 0;
+            font-weight: bold;
+        }
+
+        h4 {
+            color: #666;
+            font-size: 1em;
+            margin: 15px 0 8px 0;
+            font-weight: bold;
+        }
+
+        p {
+            color: #333;
+            line-height: 1.8;
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        ul {
+            margin: 10px 0 15px 20px;
+            color: #333;
+        }
+
+        li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .formula {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 0.95em;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 0.85em;
+        }
+
+        .table th {
+            background: #667eea;
+            color: white;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .page-number {
+            position: absolute;
+            bottom: 20px;
+            font-size: 0.9em;
+            color: #999;
+            font-weight: bold;
+        }
+
+        .page-left .page-number {
+            left: 40px;
+        }
+
+        .page-right .page-number {
+            right: 40px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-prev {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-indicator {
+            font-size: 1.2em;
+            color: white;
+            font-weight: bold;
+            background: rgba(0,0,0,0.3);
+            padding: 10px 20px;
+            border-radius: 30px;
+        }
+
+        .icon {
+            margin-right: 5px;
+        }
+
+        .emoji-section {
+            font-size: 2em;
+            margin: 10px 0;
+        }
+
+        .info-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .warning-box {
+            background: #f8d7da;
+            border-left: 5px solid #dc3545;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .cover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            padding: 40px;
+            min-height: 100%;
+        }
+
+        .cover h1 {
+            color: white;
+            font-size: 2.5em;
+            border: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .cover p {
+            color: #ecf0f1;
+            font-size: 1.2em;
+            margin-top: 20px;
+        }
+
+        .diagram {
+            background: white;
+            border: 2px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .step-box {
+            background: #e3f2fd;
+            border-left: 5px solid #2196f3;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .book {
+                height: 500px;
+                flex-direction: column;
+            }
+            
+            .page {
+                width: 100%;
+                height: 50%;
+            }
+            
+            .page-content {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <link rel="stylesheet" href="global.css">
+    <script src="drag-button.js" defer></script>
+
+    <button class="return-button" onclick="window.location.href='index.html'">
+    Regresar
+    </button>
+
+    <div class="book-container">
+        <div class="book" id="book">
+            <div class="page page-left" id="leftPage"></div>
+            <div class="page page-right" id="rightPage"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-prev" id="prevBtn" onclick="previousPage()">
+                <span class="icon">◀</span> Anterior
+            </button>
+            <div class="page-indicator" id="pageIndicator">1-2 / 20</div>
+            <button class="btn btn-next" id="nextBtn" onclick="nextPage()">
+                Siguiente <span class="icon">▶</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const pages = [
+            // Página 0 (Portada)
+            {
+                content: `
+                    <div class="cover">
+                        <div class="emoji-section">⚡🔬🦠</div>
+                        <h1>CELDAS DE COMBUSTIBLE MICROBIANA</h1>
+                        <p>Guía Completa sobre Electrólisis Microbiana</p>
+                        <p style="margin-top: 40px; font-size: 0.9em;">Generación de Energía Limpia mediante Bacterias Electrogénicas</p>
+                        <p style="margin-top: 20px; font-size: 0.8em;">📖 2025 - Edición Digital Interactiva</p>
+                    </div>
+                `
+            },
+            // Página 1 (Índice)
+            {
+                content: `
+                    <div class="page-content">
+                        <h1>📚 Índice de Contenidos</h1>
+                        
+                        <h3>Capítulo 1: Introducción (pág. 2-3)</h3>
+                        <p>• ¿Qué es una celda de combustible microbiana?</p>
+                        <p>• Historia y desarrollo</p>
+                        <p>• Aplicaciones actuales</p>
+                        
+                        <h3>Capítulo 2: Principios (pág. 4-5)</h3>
+                        <p>• Proceso de generación eléctrica</p>
+                        <p>• Reacciones químicas</p>
+                        <p>• Transferencia de electrones</p>
+                        
+                        <h3>Capítulo 3: Componentes (pág. 6-7)</h3>
+                        <p>• Cámara anódica y cátodica</p>
+                        <p>• Membrana de intercambio</p>
+                        <p>• Electrodos y circuito</p>
+                        
+                        <h3>Capítulo 4: Materiales (pág. 8-9)</h3>
+                        <p>• Materiales para ánodos</p>
+                        <p>• Materiales para cátodos</p>
+                        <p>• Catalizadores y membranas</p>
+                        
+                        <h3>Capítulo 5: Bacterias (pág. 10-11)</h3>
+                        <p>• Especies electrogénicas</p>
+                        <p>• Metabolismo y características</p>
+                        <p>• Cultivo y mantenimiento</p>
+                        
+                        <h3>Capítulo 6: Construcción (pág. 12-13)</h3>
+                        <p>• Diseño paso a paso</p>
+                        <p>• Lista de materiales</p>
+                        <p>• Ensamblaje y conexiones</p>
+                        
+                        <h3>Capítulo 7: Optimización (pág. 14-15)</h3>
+                        <p>• Variables críticas</p>
+                        <p>• Maximización de rendimiento</p>
+                        <p>• Solución de problemas</p>
+                        
+                        <h3>Capítulo 8: Aplicaciones (pág. 16-17)</h3>
+                        <p>• Tratamiento de aguas</p>
+                        <p>• Biosensores</p>
+                        <p>• Fuentes de energía remotas</p>
+                        
+                        <h3>Referencias y Recursos (pág. 18-19)</h3>
+                        
+                        <div class="page-number">1</div>
+                    </div>
+                `
+            },
+            // Página 2 (Introducción 1)
+            {
+                content: `
+                    <div class="page-content">
+                        <h1>🔬 Capítulo 1: Introducción</h1>
+                        
+                        <h2>¿Qué es una MFC?</h2>
+                        <p>Una <strong>Celda de Combustible Microbiana (MFC)</strong> es un dispositivo bioelectroquímico que convierte la energía química contenida en materia orgánica directamente en energía eléctrica mediante la actividad metabólica de microorganismos electrogénicos.</p>
+                        
+                        <div class="highlight">
+                            <strong>💡 Concepto clave:</strong> Las bacterias actúan como catalizadores biológicos que oxidan materia orgánica y transfieren electrones a un electrodo (ánodo), generando corriente eléctrica.
+                        </div>
+                        
+                        <h2>📜 Historia y Desarrollo</h2>
+                        
+                        <h4>1911 - Los inicios</h4>
+                        <p>Michael Potter (Universidad de Durham) descubre que microorganismos como <em>Saccharomyces</em> pueden generar corriente eléctrica. Generó aproximadamente 0.3-0.5V usando cultivos bacterianos.</p>
+                        
+                        <h4>1931 - Primera celda práctica</h4>
+                        <p>B. Cohen construyó múltiples celdas conectadas en serie, alcanzando más de 35 voltios, aunque con corrientes muy bajas.</p>
+                        
+                        <h4>1960s - Era espacial</h4>
+                        <p>La NASA investiga MFCs para tratar residuos orgánicos en vuelos espaciales largos mientras genera electricidad.</p>
+                        
+                        <h4>1980s - Mediadores químicos</h4>
+                        <p>Se desarrollan celdas con mediadores como tionina y azul de metileno para facilitar la transferencia de electrones.</p>
+                        
+                        <div class="page-number">2</div>
+                    </div>
+                `
+            },
+            // Página 3 (Introducción 2)
+            {
+                content: `
+                    <div class="page-content">
+                        <h4>1999 - Transferencia directa</h4>
+                        <p>Kim y colaboradores demuestran que bacterias como <em>Shewanella putrefaciens</em> pueden transferir electrones directamente al electrodo sin mediadores.</p>
+                        
+                        <h4>2002 - Boom investigativo</h4>
+                        <p>Derek Lovley descubre <em>Geobacter sulfurreducens</em>, considerada una de las mejores bacterias electrogénicas.</p>
+                        
+                        <h4>2000s-presente</h4>
+                        <p>Explosión de investigación mundial con miles de publicaciones anuales. Desarrollo de diseños comerciales y aplicaciones prácticas.</p>
+                        
+                        <h2>🌍 Aplicaciones Actuales</h2>
+                        
+                        <h3>1. Tratamiento de Aguas Residuales</h3>
+                        <p>Las MFCs tratan aguas contaminadas mientras generan electricidad. Plantas piloto en China, India y Europa procesan miles de litros diarios.</p>
+                        
+                        <h3>2. Biosensores Ambientales</h3>
+                        <p>Detección en tiempo real de contaminantes orgánicos (DBO - Demanda Biológica de Oxígeno). La corriente generada es proporcional a la contaminación.</p>
+                        
+                        <h3>3. Bioremediación</h3>
+                        <p>Limpieza de suelos contaminados con metales pesados o compuestos orgánicos mientras se genera energía.</p>
+                        
+                        <h3>4. Dispositivos Autónomos</h3>
+                        <p>Alimentación de sensores en ubicaciones remotas (océanos, pantanos) donde las baterías convencionales son impráctiles.</p>
+                        
+                        <h3>5. Desalinización</h3>
+                        <p>Celdas de desalinización microbiana (MDC) que remueven sal del agua usando electricidad bacteriana.</p>
+                        
+                        <div class="page-number">3</div>
+                    </div>
+                `
+            },
+            // Página 4 (Principios 1)
+            {
+                content: `
+                    <div class="page-content">
+                        <h1>⚡ Capítulo 2: Principios de Funcionamiento</h1>
+                        
+                        <h2>Funcionamiento General</h2>
+                        <p>El proceso se divide en tres etapas principales que ocurren simultáneamente:</p>
+                        
+                        <div class="step-box">
+                            <h3>1️⃣ OXIDACIÓN EN EL ÁNODO</h3>
+                            <p>Las bacterias oxidan materia orgánica en la cámara anódica (ambiente sin oxígeno). Durante este proceso metabólico liberan:</p>
+                            <ul>
+                                <li><strong>Electrones (e⁻):</strong> transferidos al ánodo</li>
+                                <li><strong>Protones (H⁺):</strong> liberados al medio líquido</li>
+                                <li><strong>CO₂:</strong> producto de desecho que burbujea</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="formula">
+                            Materia Orgánica + H₂O → CO₂ + H⁺ + e⁻
+                        </div>
+                        
+                        <p>Las bacterias utilizan el ánodo como "aceptor terminal de electrones" en lugar del oxígeno que normalmente usarían. Esto las hace únicas y especiales.</p>
+                        
+                        <div class="step-box">
+                            <h3>2️⃣ TRANSPORTE DE CARGAS</h3>
+                            <p><strong>Electrones:</strong> Viajan por el circuito externo desde el ánodo (−) hasta el cátodo (+). Este flujo de electrones es la corriente eléctrica que podemos aprovechar.</p>
+                            
+                            <p><strong>Protones:</strong> Atraviesan la membrana de intercambio protónico desde la cámara anódica hacia la catódica. La membrana actúa como un filtro selectivo.</p>
+                        </div>
+                        
+                        <div class="info-box">
+                            <strong>⚡ Dato importante:</strong> El voltaje generado depende de la diferencia de potencial entre las reacciones del ánodo y el cátodo, típicamente 0.2-0.8V por celda individual.
+                        </div>
+                        
+                        <div class="page-number">4</div>
+                    </div>
+                `
+            },
+            // Página 5 (Principios 2)
+            {
+                content: `
+                    <div class="page-content">
+                        <div class="step-box">
+                            <h3>3️⃣ REDUCCIÓN EN EL CÁTODO</h3>
+                            <p>Los electrones que llegan al cátodo y los protones que atravesaron la membrana se recombinan en presencia de oxígeno:</p>
+                        </div>
+                        
+                        <div class="formula">
+                            O₂ + 4H⁺ + 4e⁻ → 2H₂O
+                        </div>
+                        
+                        <p>O en el caso de electrólisis microbiana con voltaje externo aplicado:</p>
+                        
+                        <div class="formula">
+                            2H⁺ + 2e⁻ → H₂ (gas hidrógeno)
+                        </div>
+                        
+                        <h2>🔋 Reacciones Químicas Detalladas</h2>
+                        
+                        <h3>Ejemplo con Ácido Acético (CH₃COOH)</h3>
+                        <p>El acetato es uno de los sustratos más estudiados:</p>
+                        
+                        <div class="formula">
+                            CH₃COOH + 2H₂O → 2CO₂ + 8H⁺ + 8e⁻
+                        </div>
+                        
+                        <p>Cada molécula de acetato genera 8 electrones, proporcionando buena densidad de corriente.</p>
+                        
+                        <h3>Ejemplo con Glucosa (C₆H₁₂O₆)</h3>
+                        <div class="formula">
+                            C₆H₁₂O₆ + 6H₂O → 6CO₂ + 24H⁺ + 24e⁻
+                        </div>
+                        
+                        <p>La glucosa genera 24 electrones por molécula, pero las bacterias no siempre pueden oxidarla completamente.</p>
+                        
+                        <h3>Reacción Global Completa</h3>
+                        <div class="formula">
+                            CH₃COOH + 2O₂ → 2CO₂ + 2H₂O + Energía Eléctrica
+                        </div>
+                        
+                        <div class="success-box">
+                            <strong>✅ Ventaja clave:</strong> El proceso es continuo y autosostenible mientras haya materia orgánica disponible. Las bacterias se reproducen y mantienen la generación eléctrica.
+                        </div>
+                        
+                        <div class="page-number">5</div>
+                    </div>
+                `
+            },
+            // Página 6 (Componentes 1)
+            {
+                content: `
+                    <div class="page-content">
+                        <h1>🏗️ Capítulo 3: Componentes Principales</h1>
+                        
+                        <h2>1️⃣ CÁMARA ANÓDICA</h2>
+                        <p>Compartimento donde ocurre la oxidación biológica de materia orgánica por las bacterias.</p>
+                        
+                        <h3>Características Críticas:</h3>
+                        <ul>
+                            <li><strong>Ambiente:</strong> Estrictamente anaeróbico (sin oxígeno)</li>
+                            <li><strong>pH óptimo:</strong> 6.5 - 7.5</li>
+                            <li><strong>Temperatura:</strong> 20-35°C (mesófilas) o 50-60°C (termófilas)</li>
+                            <li><strong>Volumen típico:</strong> 50-500 mL (laboratorio), hasta 1000 L (escala piloto)</li>
+                            <li><strong>Material:</strong> Vidrio, plexiglás, policarbonato (transparente para observación)</li>
+                        </ul>
+                        
+                        <h3>Componentes Internos:</h3>
+                        <ul>
+                            <li>🦠 <strong>Bacterias electrogénicas:</strong> El corazón del sistema</li>
+                            <li>💧 <strong>Sustrato orgánico:</strong> Glucosa, acetato, aguas residuales</li>
+                            <li>🧪 <strong>Buffer de pH:</strong> Fosfatos (KH₂PO₄, K₂HPO₄)</li>
+                            <li>⚗️ <strong>Nutrientes:</strong> NH₄Cl, MgSO₄, CaCl₂, trazas de metales</li>
+                            <li>⚫ <strong>Electrodo ánodo:</strong> Donde se recolectan los electrones</li>
+                        </ul>
+                        
+                        <div class="warning-box">
+                            <strong>⚠️ CRUCIAL:</strong> Mantener condiciones anaeróbicas estrictas. La presencia de oxígeno reduce la eficiencia hasta en 90% porque las bacterias preferirán usar O₂ en lugar del electrodo.
+                        </div>
+                        
+                        <h3>Preparación del Medio de Cultivo Anódico:</h3>
+                        <p><strong>Medio base (por litro):</strong></p>
+                        <ul>
+                            <li>KH₂PO₄: 4.4 g</li>
+                            <li>K₂HPO₄: 3.4 g</li>
+                            <li>NH₄Cl: 1.3 g</li>
+                            <li>MgSO₄·7H₂O: 0.2 g</li>
+                            <li>CaCl₂: 0.01 g</li>
+                        </ul>
+                        
+                        <div class="page-number">6</div>
+                    </div>
+                `
+            },
+            // Página 7 (Componentes 2)
+            {
+                content: `
+                    <div class="page-content">
+                        <h2>2️⃣ ELECTRODO ÁNODO</h2>
+                        
+                        <h3>Propiedades Requeridas:</h3>
+                        <ul>
+                            <li>✓ Alta conductividad eléctrica</li>
+                            <li>✓ Biocompatibilidad (no tóxico para bacterias)</li>
+                            <li>✓ Gran área superficial específica</li>
+                            <li>✓ Resistencia a la corrosión</li>
+                            <li>✓ Porosidad para colonización bacteriana</li>
+                            <li>✓ Costo razonable</li>
+                        </ul>
+                        
+                        <h2>3️⃣ MEMBRANA DE INTERCAMBIO PROTÓNICO</h2>
+                        <p>Barrera selectiva que separa las dos cámaras y solo permite el paso de protones (H⁺).</p>
+                        
+                        <h3>Funciones Críticas:</h3>
+                        <ul>
+                            <li>🔴 Permitir paso selectivo de H⁺ (alta conductividad protónica)</li>
+                            <li>⛔ Impedir paso de oxígeno al ánodo</li>
+                            <li>🚫 Evitar mezcla de sustratos y bacterias</li>
+                            <li>⚖️ Mantener balance de cargas entre cámaras</li>
+                            <li>🔒 Prevenir cortocircuitos</li>
+                        </ul>
+                        
+                        <h3>Tipos de Membranas:</h3>
+                        <table class="table">
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Material</th>
+                                <th>Conductividad</th>
+                                <th>Costo</th>
+                            </tr>
+                            <tr>
+                                <td>Nafion 117</td>
+                                <td>Polímero fluorado</td>
+                                <td>Excelente</td>
+                                <td>$$$$</td>
+                            </tr>
+                            <tr>
+                                <td>Ultrex CMI-7000</td>
+                                <td>Polímero catiónico</td>
+                                <td>Muy buena</td>
+                                <td>$$$</td>
+                            </tr>
+                            <tr>
+                                <td>Cerámica porosa</td>
+                                <td>Óxidos cerámicos</td>
+                                <td>Moderada</td>
+                                <td>$$</td>
+                            </tr>
+                            <tr>
+                                <td>Fibra de vidrio</td>
+                                <td>Sílice</td>
+                                <td>Baja</td>
+                                <td>$</td>
+                            </tr>
+                        </table>
+                        
+                        <div class="info-box">
+                            <strong>💡 Alternativa económica:</strong> Para proyectos educativos, puedes usar tela de algodón saturada en solución salina, aunque con menor eficiencia.
+                        </div>
+                        
+                        <div class="page-number">7</div>
+                    </div>
+                `
+            },
+            // Página 8 (Materiales 1)
+            {
+                content: `
+                    <div class="page-content">
+                        <h1>🔧 Capítulo 4: Materiales de Construcción</h1>
+                        
+                        <h2>MATERIALES PARA ÁNODOS</h2>
+                        
+                        <h3>1. Grafito Sólido</h3>
+                        <div class="success-box">
+                            <strong>✅ Ventajas:</strong>
+                            <ul>
+                                <li>Excelente biocompatibilidad</li>
+                                <li>Alta conductividad (10⁵ S/m)</li>
+                                <li>Bajo costo y fácil de conseguir</li>
+                                <li>Resistente a la corrosión</li>
+                                <li>Área superficial: 0.1-1 m²/g</li>
+                            </ul>
+                            <strong>❌ Desventajas:</strong> Baja área superficial comparada con otros materiales.
+                        </div>
+                        
+                        <h3>2. Tela/Fieltro de Carbón</h3>
+                        <p><strong>Composición:</strong> Fibras de carbono entrelazadas</p>
+                        <p><strong>Área superficial:</strong> 1000-2000 m²/g</p>
+                        <p><strong>Espesor típico:</strong> 3-6 mm</p>
+                        <p><strong>Ventajas:</strong> Extremadamente poroso, excelente para colonización bacteriana, flexible, fácil de cortar y moldear.</p>
+                        <p><strong>Costo:</strong> $20-50 por metro cuadrado</p>
+                        
+                        <h3>3. Papel/Tela de Carbón Activado</h3>
+                        <p>Carbón con tratamiento especial que aumenta porosidad.</p>
+                        <p><strong>Área superficial:</strong> Hasta 3000 m²/g</p>
+                        <p><strong>Aplicación principal:</strong> Ánodos de alto rendimiento</p>
+                        
+                        <h3>4. Cepillos de Grafito</h3>
+                        <p>Fibras de grafito enrolladas en forma de cepillo cilíndrico.</p>
+                        <p><strong>Ventaja única:</strong> Área superficial tridimensional masiva (hasta 18,000 m²/m³)</p>
+                        <p><strong>Desventaja:</strong> Mayor costo y complejidad de fabricación</p>
+                        
+                        <h3>5. Nanotubos de Carbono (CNT)</h3>
+                        <p><strong>Conductividad:</strong> Excepcional (10⁶-10⁷ S/m)</p>
+                        <p><strong>Área superficial:</strong> >3000 m²/g</p>
+                        <p><strong>Estado:</strong> Experimental, muy costoso ($200-500/g)</p>
+                        
+                        <div class="page-number">8</div>
+                    </div>
+                `
+            },
+            // Página 9
+            {
+                content: `
+                    <div class="page-content">
+                        <h2>MATERIALES PARA CÁTODOS</h2>
+                        
+                        <h3>1. Acero Inoxidable (SS304, SS316)</h3>
+                        <p><strong>Composición:</strong> Hierro + Cromo (>10.5%) + Níquel</p>
+                        <p><strong>Ventajas:</strong> Muy resistente a la corrosión, económico ($10-20/kg), fácil de mecanizar, buena conductividad.</p>
+                        <p><strong>Desventajas:</strong> Menor actividad catalítica que otros materiales, puede requerir catalizadores adicionales.</p>
+                        
+                        <h3>2. Papel de Carbón con Catalizador</h3>
+                        <p>La configuración más común en cátodos de aire.</p>
+                        
+                        <h4>Catalizadores utilizados:</h4>
+                        <ul>
+                            <li><strong>Platino (Pt):</strong> El más eficiente (20-40 mW/m²), pero muy costoso ($30,000/kg)</li>
+                            <li><strong>Óxido de Manganeso (MnO₂):</strong> Eficiencia 70% del Pt, económico ($5-10/kg)</li>
+                            <li><strong>Óxido de Hierro (Fe₂O₃):</strong> Muy económico ($2-5/kg), eficiencia moderada</li>
+                            <li><strong>Óxido de Cobalto (Co₃O₄):</strong> Buen balance costo-beneficio</li>
+                            <li><strong>Negro de carbón + Pt:</strong> Mezcla que reduce uso de Pt hasta 90%</li>
+                        </ul>
+                        
+                        <h3>3. Malla de Titanio</h3>
+                        <p><strong>Ventajas:</strong> Extremadamente resistente a la corrosión, durabilidad excepcional (>10 años), liviano.</p>
+                        <p><strong>Desventajas:</strong> Costoso ($100-200/kg), requiere catalizador.</p>
+                        
+                        <h3>4. Grafito (también en cátodo)</h3>
+                        <p>Puede usarse en ambos electrodos, especialmente en diseños simétricos.</p>
+                        
+                        <div class="info-box">
+                            <strong>💡 Recomendación para principiantes:</strong>
+                            <ul>
+                                <li><strong>Ánodo:</strong> Tela de carbón (fácil de conseguir en tiendas de electroquímica)</li>
+                                <li><strong>Cátodo:</strong> Acero inoxidable con recubrimiento de MnO₂ casero</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="page-number">9</div>
+                    </div>
+                `
+            },
+            // Página 10 (Bacterias 1)
+            {
+                content: `
+                    <div class="page-content">
+                        <h1>🦠 Capítulo 5: Bacterias Electrogénicas</h1>
+                        
+                        <h2>¿Qué son las Bacterias Electrogénicas?</h2>
+                        <p>Son microorganismos capaces de transferir electrones extracelularmente a superficies conductoras (electrodos) como parte de su metabolismo respiratorio.</p>
+                        
+                        <h2>ESPECIES PRINCIPALES</h2>
+                        
+                        <h3>1. Geobacter sulfurreducens ⭐⭐⭐⭐⭐</h3>
+                        <div class="success-box">
+                            <strong>🏆 La estrella de las MFCs</strong>
+                            <p><strong>Descubierta:</strong> 1994, Derek Lovley (Universidad de Massachusetts)</p>
+                            <p><strong>Hábitat natural:</strong> Sedimentos anaeróbicos, lodo</p>
+                            <p><strong>Características:</strong></p>
+                            <ul>
+                                <li>Gram-negativa, forma de bastón</li>
+                                <li>Estrictamente anaerobia</li>
+                                <li>Genera las mayores densidades de corriente</li>
+                                <li>Forma biofilms conductores gruesos (>50 μm)</li>
+                                <li>Produce "nanocables" (pili conductores)</li>
+                            </ul>
+                            <p><strong>Densidad de corriente:</strong> Hasta 8 A/m²</p>
+                            <p><strong>Sustratos preferidos:</strong> Acetato, formiato, lactato</p>
+                        </div>
+                        
+                        <h3>2. Shewanella oneidensis ⭐⭐⭐⭐</h3>
+                        <p><strong>Hábitat:</strong> Sedimentos marinos, agua dulce</p>
+                        <p><strong>Características únicas:</strong></p>
+                        <ul>
+                            <li>Facultativa (tolera oxígeno)</li>
+                            <li>Muy versátil metabólicamente</li>
+                            <li>Produce flavinas como "lanzaderas" de electrones</li>
+                            <li>Crece más rápido que Geobacter</li>
+                            <li>Más fácil de cultivar en laboratorio</li>
+                        </ul>
+                        <p><strong>Densidad de corriente:</strong> 2-4 A/m²</p>
+                        <p><strong>Ventaja:</strong> Ideal para principiantes por su facilidad de cultivo</p>
+                        
+                        <div class="page-number">10</div>
+                    </div>
+                `
+            },
+            // Página 11 (Bacterias 2)
+            {
+                content: `
+                    <div class="page-content">
+                        <h3>3. Pseudomonas aeruginosa ⭐⭐⭐</h3>
+                        <p><strong>Hábitat:</strong> Ubicua, suelo, agua, plantas</p>
+                        <p><strong>Características:</strong></p>
+                        <ul>
+                            <li>Muy común y fácil de aislar</li>
+                            <li>Produce piocianina (mediador redox natural)</li>
+                            <li>Forma biofilms robustos</li>
+                            <li>Tolera amplias condiciones ambientales</li>
+                        </ul>
+                        <p><strong>Precaución:</strong> ⚠️ Patógeno oportunista - usar con bioseguridad nivel 2</p>
+                        
+                        <h3>4. Clostridium butyricum ⭐⭐⭐</h3>
+                        <p>Anaerobia estricta que además produce butanol y H₂ como subproductos valiosos.</p>
+                        
+                        <h3>5. Consorcios Mixtos ⭐⭐⭐⭐⭐</h3>
+                        <div class="highlight">
+                            <strong>💡 La mejor opción práctica:</strong> Usar comunidades bacterianas naturales de:
+                            <ul>
+                                <li>Lodo de plantas de tratamiento</li>
+                                <li>Sedimentos de ríos o lagos</li>
+                                <li>Composta madura</li>
+                                <li>Tierra de jardín rica en materia orgánica</li>
+                            </ul>
+                            <p><strong>Ventaja:</strong> Sinergias metabólicas, mayor robustez, no requiere cultivo puro, más realista para aplicaciones.</p>
+                        </div>
+                        
+                        <h2>MECANISMOS DE TRANSFERENCIA ELECTRÓNICA</h2>
+                        
+                        <h3>1. Transferencia Directa</h3>
+                        <p>Proteínas en la membrana celular (citocromos tipo c) transfieren electrones directamente al electrodo cuando la bacteria está en contacto físico.</p>
+                        
+                        <h3>2. Nanocables (Pili)</h3>
+                        <p>Apéndices proteicos conductores que permiten transferencia a distancia (hasta 50 μm).</p>
+                        
+                        <h3>3. Mediadores Naturales</h3>
+                        <p>Moléculas secretadas (flavinas, fenazinas) que actúan como "lanzaderas" de electrones.</p>
+                        
+                        <div class="page-number">11</div>
+                    </div>
+                `
+            },
+            // Página 12 (Construcción 1)
+            {
+                content: `
+                    <div class="page-content">
+                        <h1>🔨 Capítulo 6: Construcción Práctica</h1>
+                        
+                        <h2>DISEÑO BÁSICO DE DOBLE CÁMARA</h2>
+                        
+                        <h3>Lista de Materiales</h3>
+                        <table class="table">
+                            <tr>
+                                <th>Componente</th>
+                                <th>Material/Especificación</th>
+                                <th>Cantidad</th>
+                            </tr>
+                            <tr>
+                                <td>Cámara anódica</td>
+                                <td>Frasco de vidrio 500 mL</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>Cámara catódica</td>
+                                <td>Frasco de vidrio 500 mL</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>Ánodo</td>
+                                <td>Tela de carbón 5×5 cm</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>Cátodo</td>
+                                <td>Malla de acero inoxidable 5×5 cm</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>Membrana</td>
+                                <td>Nafion 117 o cerámica porosa</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>Cables</td>
+                                <td>Cable de cobre calibre 20</td>
+                                <td>2 m</td>
+                            </tr>
+                            <tr>
+                                <td>Pinzas cocodrilo</td>
+                                <td>Pequeñas de cobre</td>
+                                <td>4</td>
+                            </tr>
+                            <tr>
+                                <td>Resistencia</td>
+                                <td>1000 Ω, 1W</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>Multímetro</td>
+                                <td>Digital básico</td>
+                                <td>1</td>
+                            </tr>
+                            <tr>
+                                <td>Sellador</td>
+                                <td>Silicona acuario</td>
+                                <td>1 tubo</td>
+                            </tr>
+                            <tr>
+                                <td>Tapones de goma</td>
+                                <td>Con agujeros para cables</td>
+                                <td>2</td>
+                            </tr>
+                        </table>
+                        
+                        <h3>Químicos para Medio de Cultivo</h3>
+                        <ul>
+                            <li>KH₂PO₄ (fosfato monobásico de potasio): 4.4 g/L</li>
+                            <li>K₂HPO₄ (fosfato dibásico de potasio): 3.4 g/L</li>
+                            <li>NH₄Cl (cloruro de amonio): 1.3 g/L</li>
+                            <li>MgSO₄·7H₂O (sulfato de magnesio): 0.2 g/L</li>
+                            <li>Glucosa o acetato de sodio: 1-2 g/L</li>
+                        </ul>
+                        
+                        <div class="page-number">12</div>
+                    </div>
+                `
+            },
+            // Página 13 (Construcción 2)
+            {
+                content: `
+                    <div class="page-content">
+                        <h2>PASOS DE ENSAMBLAJE</h2>
+                        
+                        <div class="step-box">
+                            <h3>Paso 1: Preparación de Electrodos</h3>
+                            <p><strong>Ánodo (tela de carbón):</strong></p>
+                            <ul>
+                                <li>Cortar tela de carbón 5×5 cm</li>
+                                <li>Lavar con agua destilada</li>
+                                <li>Secar a 100°C por 2 horas</li>
+                                <li>Soldar cable de cobre a una esquina</li>
+                                <li>Opcional: tratamiento ácido (HNO₃ 1M, 30 min) para aumentar grupos funcionales</li>
+                            </ul>
+                            
+                            <p><strong>Cátodo (acero inoxidable):</strong></p>
+                            <ul>
+                                <li>Cortar malla 5×5 cm</li>
+                                <li>Limpiar con acetona y agua</li>
+                                <li>Soldar cable de cobre</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="step-box">
+                            <h3>Paso 2: Preparación de la Membrana</h3>
+                            <p><strong>Si usa Nafion:</strong></p>
+                            <ul>
+                                <li>Cortar círculo de 8 cm de diámetro</li>
+                                <li>Hervir en H₂O₂ 3% por 1 hora</li>
+                                <li>Enjuagar con agua destilada</li>
+                                <li>Almacenar en agua destilada</li>
+                            </ul>
+                            
+                            <p><strong>Si usa cerámica porosa:</strong></p>
+                            <ul>
+                                <li>Sumergir en agua destilada 24 horas</li>
+                                <li>Limpiar superficies</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="step-box">
+                            <h3>Paso 3: Ensamblaje de Cámaras</h3>
+                            <ul>
+                                <li>Unir ambos frascos con la membrana en medio</li>
+                                <li>Sellar con silicona de acuario</li>
+                                <li>Dejar curar 24 horas</li>
+                                <li>Verificar que no haya fugas llenando con agua</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="step-box">
+                            <h3>Paso 4: Instalación de Electrodos</h3>
+                            <ul>
+                                <li>Insertar ánodo en cámara anódica</li>
+                                <li>Insertar cátodo en cámara catódica</li>
+                                <li>Pasar cables por tapones de goma</li>
+                                <li>Sellar con silicona alrededor de los cables</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="page-number">13</div>
+                    </div>
+                `
+            },
+            // Página 14 (Optimización 1)
+            {
+                content: `
+                    <div class="page-content">
+                        <h1>⚙️ Capítulo 7: Optimización y Operación</h1>
+                        
+                        <h2>VARIABLES CRÍTICAS</h2>
+                        
+                        <h3>1. pH (Factor más importante)</h3>
+                        <table class="table">
+                            <tr>
+                                <th>pH</th>
+                                <th>Efecto</th>
+                            </tr>
+                            <tr>
+                                <td>&lt; 6.0</td>
+                                <td>❌ Inhibe crecimiento bacteriano</td>
+                            </tr>
+                            <tr>
+                                <td>6.5-7.5</td>
+                                <td>✅ ÓPTIMO - Máxima actividad</td>
+                            </tr>
+                            <tr>
+                                <td>&gt; 8.0</td>
+                                <td>⚠️ Reduce transferencia protónica</td>
+                            </tr>
+                        </table>
+                        <p><strong>Monitoreo:</strong> Medir cada 2-3 días con pH-metro o tiras</p>
+                        <p><strong>Ajuste:</strong> Buffer de fosfatos mantiene pH estable</p>
+                        
+                        <h3>2. Temperatura</h3>
+                        <ul>
+                            <li><strong>15-25°C:</strong> Crecimiento lento pero estable</li>
+                            <li><strong>25-35°C:</strong> ⭐ Rango óptimo para mesófilas</li>
+                            <li><strong>35-45°C:</strong> Acelera metabolismo pero aumenta pérdidas</li>
+                            <li><strong>&gt;40°C:</strong> Requiere bacterias termófilas especializadas</li>
+                        </ul>
+                        
+                        <h3>3. Concentración de Sustrato</h3>
+                        <p><strong>Demasiado bajo (&lt;0.5 g/L):</strong> Hambre bacteriana, baja corriente</p>
+                        <p><strong>Óptimo (1-2 g/L):</strong> ✅ Balance perfecto</p>
+                        <p><strong>Demasiado alto (&gt;5 g/L):</strong> Desperdicio, acumulación de intermediarios</p>
+                        
+                        <h3>4. Resistencia Externa</h3>
+                        <p>Controla el balance entre voltaje y corriente:</p>
+                        <ul>
+                            <li><strong>10-100 Ω:</strong> Alta corriente, bajo voltaje</li>
+                            <li><strong>500-1000 Ω:</strong> ⭐ Balance óptimo para muchas aplicaciones</li>
+                            <li><strong>&gt;10 kΩ:</strong> Alto voltaje, corriente mínima</li>
+                        </ul>
+                        
+                        <div class="page-number">14</div>
+                    </div>
+                `
+            },
+            // Página 15 (Optimización 2)
+            {
+                content: `
+                    <div class="page-content">
+                        <h3>5. Oxígeno en el Cátodo</h3>
+                        <p><strong>Esencial para reacción de reducción:</strong></p>
+                        <ul>
+                            <li>Concentración mínima: 2 mg/L</li>
+                            <li>Óptimo: 6-8 mg/L (saturación atmosférica)</li>
+                            <li>Método: Aireación suave con bomba de acuario</li>
+                        </ul>
+                        
+                        <h2>MAXIMIZACIÓN DE RENDIMIENTO</h2>
+                        
+                        <h3>🔋 Para Mayor Potencia:</h3>
+                        <ul>
+                            <li>Aumentar área del ánodo (más superficie = más bacterias)</li>
+                            <li>Usar cátodo de aire (elimina limitación de O₂)</li>
+                            <li>Reducir distancia entre electrodos (menor resistencia interna)</li>
+                            <li>Optimizar concentración de sustrato (1.5-2 g/L)</li>
+                            <li>Mantener temperatura constante (30°C ideal)</li>
+                        </ul>
+                        
+                        <h3>⏱️ Para Arranque Rápido:</h3>
+                        <ul>
+                            <li>Inocular con cultivo puro de Shewanella</li>
+                            <li>Pre-acondicionar ánodo con bacterias (2-3 días)</li>
+                            <li>Usar acetato en lugar de glucosa</li>
+                            <li>Mantener a 35°C durante aclimatación</li>
+                        </ul>
+                        
+                        <h3>💰 Para Bajo Costo:</h3>
+                        <ul>
+                            <li>Usar grafito común en lugar de tela de carbón</li>
+                            <li>Membrana de cerámica porosa o arcilla</li>
+                            <li>Aguas residuales como sustrato (gratis)</li>
+                            <li>Consorcio mixto de lodo (no requiere cultivo puro)</li>
+                        </ul>
+                        
+                        <h2>SOLUCIÓN DE PROBLEMAS</h2>
+                        
+                        <table class="table">
+                            <tr>
+                                <th>Problema</th>
+                                <th>Causa Probable</th>
+                                <th>Solución</th>
+                            </tr>
+                            <tr>
+                                <td>No genera voltaje</td>
+                                <td>Falta de bacterias</td>
+                                <td>Esperar 5-7 días para colonización</td>
+                            </tr>
+                            <tr>
+                                <td>Voltaje muy bajo (&lt;0.1V)</td>
+                                <td>Oxígeno en ánodo</td>
+                                <td>Verificar sellado, purgar con N₂</td>
+                            </tr>
+                            <tr>
+                                <td>Voltaje decae rápido</td>
+                                <td>Sustrato agotado</td>
+                                <td>Alimentar cada 3-4 días</td>
+                            </tr>
+                            <tr>
+                                <td>pH ácido en ánodo</td>
+                                <td>Acumulación de H⁺</td>
+                                <td>Aumentar buffer, mejorar membrana</td>
+                            </tr>
+                        </table>
+                        
+                        <div class="page-number">15</div>
+                    </div>
+                `
+            },
+            // Página 16 (Aplicaciones 1)
+            {
+                content: `
+                    <div class="page-content">
+                        <h1>🌍 Capítulo 8: Aplicaciones Reales</h1>
+                        
+                        <h2>1. TRATAMIENTO DE AGUAS RESIDUALES</h2>
+                        
+                        <h3>Principio</h3>
+                        <p>Las MFCs tratan agua contaminada mientras generan electricidad. Las bacterias consumen contaminantes orgánicos como "combustible".</p>
+                        
+                        <h3>Ventajas vs Tratamiento Convencional</h3>
+                        <table class="table">
+                            <tr>
+                                <th>Aspecto</th>
+                                <th>Convencional</th>
+                                <th>MFC</th>
+                            </tr>
+                            <tr>
+                                <td>Energía</td>
+                                <td>❌ Consume 0.6 kWh/m³</td>
+                                <td>✅ Genera 0.1-0.3 kWh/m³</td>
+                            </tr>
+                            <tr>
+                                <td>Lodos</td>
+                                <td>❌ Alta producción</td>
+                                <td>✅ 50-90% menos lodos</td>
+                            </tr>
+                            <tr>
+                                <td>Aireación</td>
+                                <td>❌ Requiere bombeo</td>
+                                <td>✅ Pasiva o mínima</td>
+                            </tr>
+                            <tr>
+                                <td>Emisiones CO₂</td>
+                                <td>❌ Altas</td>
+                                <td>✅ Neutrales</td>
+                            </tr>
+                        </table>
+                        
+                        <h3>Casos de Éxito</h3>
+                        <p><strong>🇨🇳 China (2018):</strong> Planta piloto en Qingdao trata 20 m³/día de agua textil, genera 5 kWh/día.</p>
+                        
+                        <p><strong>🇮🇳 India (2020):</strong> Sistema modular en Bihar trata efluentes de lechería, reduce DQO en 85%.</p>
+                        
+                        <p><strong>🇳🇱 Países Bajos (2019):</strong> Cervecería Heineken implementa MFC para pretratamiento de efluentes.</p>
+                        
+                        <h2>2. BIOSENSORES DE CONTAMINACIÓN</h2>
+                        
+                        <h3>Concepto</h3>
+                        <p>La corriente generada es proporcional a la cantidad de materia orgánica. Funciona como medidor continuo de DBO (Demanda Biológica de Oxígeno).</p>
+                        
+                        <h3>Ventajas sobre Métodos Tradicionales</h3>
+                        <ul>
+                            <li>⏱️ Respuesta en minutos vs 5 días (DBO₅)</li>
+                            <li>📊 Monitoreo continuo en tiempo real</li>
+                            <li>💰 Bajo costo operativo (sin reactivos)</li>
+                            <li>🔌 Autoalimentado (no requiere energía externa)</li>
+                        </ul>
+                        
+                        <div class="page-number">16</div>
+                    </div>
+                `
+            },
+            // Página 17 (Aplicaciones 2)
+            {
+                content: `
+                    <div class="page-content">
+                        <h2>3. GENERACIÓN DE HIDRÓGENO</h2>
+                        
+                        <h3>Celda de Electrólisis Microbiana (MEC)</h3>
+                        <p>Variante de MFC donde se aplica voltaje externo pequeño (0.2-0.8V) para producir H₂ gas en lugar de electricidad.</p>
+                        
+                        <div class="formula">
+                            Materia Orgánica + Energía (0.2V) → H₂ + CO₂
+                        </div>
+                        
+                        <h3>Eficiencia Energética</h3>
+                        <p>Produce 2-4 veces más energía en forma de H₂ de la que consume.</p>
+                        <p><strong>Ejemplo:</strong> 1 kWh invertido genera H₂ equivalente a 3 kWh.</p>
+                        
+                        <h3>Aplicaciones del Hidrógeno Microbiano</h3>
+                        <ul>
+                            <li>🚗 Combustible para vehículos de hidrógeno</li>
+                            <li>🔋 Celdas de combustible de H₂</li>
+                            <li>⚗️ Industria química (fertilizantes, refinación)</li>
+                            <li>🏭 Almacenamiento de energía renovable</li>
+                        </ul>
+                        
+                        <h2>4. DISPOSITIVOS REMOTOS AUTOALIMENTADOS</h2>
+                        
+                        <h3>Sensores Marinos</h3>
+                        <p>MFCs instaladas en el fondo marino alimentan sensores de monitoreo ambiental durante años sin mantenimiento.</p>
+                        <p><strong>Ubicaciones:</strong> Océano Pacífico, Mar del Norte, Antártida</p>
+                        
+                        <h3>Sensores de Humedales</h3>
+                        <p>Monitoreo de calidad de agua en pantanos y marismas usando materia orgánica del sedimento.</p>
+                        
+                        <h2>5. BIOREMEDIACIÓN ACTIVA</h2>
+                        
+                        <h3>Descontaminación de Suelos</h3>
+                        <p>Las bacterias electrogénicas pueden degradar:</p>
+                        <ul>
+                            <li>Hidrocarburos del petróleo</li>
+                            <li>Compuestos fenólicos</li>
+                            <li>Colorantes industriales</li>
+                            <li>Pesticidas organoclorados</li>
+                        </ul>
+                        
+                        <p>Mientras limpian, generan electricidad que puede alimentar sistemas de monitoreo.</p>
+                        
+                        <h2>6. PRODUCCIÓN DE QUÍMICOS DE VALOR</h2>
+                        
+                        <p>Además de electricidad e hidrógeno, las MFCs pueden producir:</p>
+                        <ul>
+                            <li><strong>Peróxido de hidrógeno (H₂O₂):</strong> Desinfectante</li>
+                            <li><strong>Hidróxido de sodio (NaOH):</strong> Base industrial</li>
+                            <li><strong>Ácidos orgánicos:</strong> Acetato, propionato</li>
+                            <li><strong>Metano (CH₄):</strong> En sistemas de dos etapas</li>
+                        </ul>
+                        
+                        <div class="success-box">
+                            <strong>🌱 Visión Futura:</strong> Biorrefinerías microbianas que convierten desechos en electricidad, combustibles y productos químicos simultáneamente. Economía circular completa.
+                        </div>
+                        
+                        <div class="page-number">17</div>
+                    </div>
+                `
+            },
+            // Página 18 (Referencias 1)
+            {
+                content: `
+                    <div class="page-content">
+                        <h1>📚 Referencias y Recursos</h1>
+                        
+                        <h2>LITERATURA FUNDAMENTAL</h2>
+                        
+                        <h3>Libros Recomendados</h3>
+                        <ul>
+                            <li><strong>"Microbial Fuel Cells"</strong> - Bruce E. Logan (2008). El texto definitivo sobre MFCs.</li>
+                            <li><strong>"Bioelectrochemical Systems"</strong> - Rabaey & Angenent (2010). Visión completa del campo.</li>
+                            <li><strong>"Exoelectrogens"</strong> - Hao Ren (2018). Enfoque en bacterias electrogénicas.</li>
+                        </ul>
+                        
+                        <h3>Artículos Clave (Hitos Históricos)</h3>
+                        
+                        <p><strong>Potter, M.C. (1911)</strong> "Electrical Effects Accompanying the Decomposition of Organic Compounds" <em>Proceedings of the Royal Society B</em></p>
+                        <p>📌 Primer reporte de generación eléctrica por bacterias.</p>
+                        
+                        <p><strong>Kim, H.J. et al. (1999)</strong> "A mediator-less microbial fuel cell using a metal reducing bacterium" <em>Enzyme and Microbial Technology</em></p>
+                        <p>📌 Demostración de transferencia directa de electrones.</p>
+                        
+                        <p><strong>Lovley, D.R. (2006)</strong> "Bug juice: harvesting electricity with microorganisms" <em>Nature Reviews Microbiology</em></p>
+                        <p>📌 Revisión que popularizó el campo.</p>
+                        
+                        <p><strong>Logan, B.E. et al. (2008)</strong> "Microbial Electrolysis Cells for High Yield Hydrogen Gas Production from Organic Matter" <em>Environmental Science & Technology</em></p>
+                        <p>📌 Introducción de las MECs para H₂.</p>
+                        
+                        <h2>RECURSOS EN LÍNEA</h2>
+                        
+                        <h3>Bases de Datos Científicas</h3>
+                        <ul>
+                            <li><strong>PubMed:</strong> pubmed.ncbi.nlm.nih.gov</li>
+                            <li><strong>Google Scholar:</strong> scholar.google.com</li>
+                            <li><strong>Web of Science:</strong> webofscience.com</li>
+                        </ul>
+                        
+                        <p><strong>Búsquedas recomendadas:</strong> "microbial fuel cell", "exoelectrogen", "bioelectrochemical system", "Geobacter"</p>
+                        
+                        <div class="page-number">18</div>
+                    </div>
+                `
+            },
+            // Página 19 (Referencias 2)
+            {
+                content: `
+                    <div class="page-content">
+                        <h2>COMUNIDADES Y FOROS</h2>
+                        
+                        <h3>Grupos de Investigación Líderes</h3>
+                        <ul>
+                            <li><strong>Penn State University</strong> - Bruce Logan Lab (EE.UU.)</li>
+                            <li><strong>University of Massachusetts</strong> - Derek Lovley Lab (EE.UU.)</li>
+                            <li><strong>Ghent University</strong> - Korneel Rabaey Lab (Bélgica)</li>
+                            <li><strong>Tsinghua University</strong> - Hong Liu Lab (China)</li>
+                        </ul>
+                        
+                        <h3>Redes Sociales y Comunidades</h3>
+                        <ul>
+                            <li><strong>ResearchGate:</strong> Grupos de bioelectroquímica</li>
+                            <li><strong>LinkedIn:</strong> Bioelectrochemical Society</li>
+                            <li><strong>Reddit:</strong> r/microbiology, r/AskScience</li>
+                        </ul>
+                        
+                        <h2>PROVEEDORES DE MATERIALES</h2>
+                        
+                        <h3>Electrodos y Componentes</h3>
+                        <ul>
+                            <li><strong>Fuel Cell Store</strong> (fuelcellstore.com) - Nafion, electrodos de carbón</li>
+                            <li><strong>Alibaba</strong> (alibaba.com) - Tela de carbón económica</li>
+                            <li><strong>Sigma-Aldrich</strong> (sigmaaldrich.com) - Químicos de alta pureza</li>
+                        </ul>
+                        
+                        <h3>Bacterias y Cultivos</h3>
+                        <ul>
+                            <li><strong>ATCC</strong> (American Type Culture Collection) - Cepas certificadas</li>
+                            <li><strong>DSMZ</strong> (German Collection) - Colección europea</li>
+                            <li><strong>Cultivos locales:</strong> Lodo de plantas de tratamiento (GRATIS)</li>
+                        </ul>
+                        
+                        <h2>KITS EDUCATIVOS</h2>
+                        
+                        <p><strong>MudWatt</strong> - Kit educativo para escuelas ($40-60)</p>
+                        <p>Genera electricidad con bacterias del suelo. Ideal para demostraciones.</p>
+                        
+                        <p><strong>Microbial Fuel Cell Kit - Science Buddies</strong> ($80-120)</p>
+                        <p>Kit completo con electrodos y materiales para proyectos escolares.</p>
+                        
+                        <div class="highlight">
+                            <strong>💡 Consejo Final:</strong> La mejor manera de aprender es construyendo tu propia MFC. Comienza simple, experimenta, documenta y mejora iterativamente. ¡La ciencia ciudadana está impulsando innovaciones reales en este campo!
+                        </div>
+                        
+                        <div class="page-number">19</div>
+                    </div>
+                `
+            },
+            // Página 20 (Contraportada)
+            {
+                content: `
+                    <div class="cover">
+                        <h1>🔬 Sobre las Celdas Microbianas</h1>
+                        <p style="margin-top: 30px;">Las celdas de combustible microbiana representan una intersección fascinante entre microbiología, electroquímica e ingeniería ambiental.</p>
+                        
+                        <p style="margin-top: 20px;">Este campo emergente promete revolucionar el tratamiento de aguas residuales, la producción de energía renovable y la bioremediación ambiental.</p>
+                        
+                        <div class="emoji-section" style="margin-top: 40px;">🌍♻️⚡</div>
+                        
+                        <p style="margin-top: 30px; font-size: 1.1em; font-weight: bold;">Energía Limpia del Futuro</p>
+                        
+                        <p style="margin-top: 50px; font-size: 0.9em;">Para más información y actualizaciones, busca "Microbial Fuel Cells" en bases de datos científicas o únete a comunidades de bioelectroquímica en línea.</p>
+                        
+                        <p style="margin-top: 30px; font-size: 0.8em;">© 2025 - Licencia Creative Commons</p>
+                        <p style="font-size: 0.8em;">Uso educativo y científico</p>
+                    </div>
+                `
+            }
+        ];
+
+        let currentPage = 0;
+
+        function renderPages() {
+            const leftPage = document.getElementById('leftPage');
+            const rightPage = document.getElementById('rightPage');
+            const pageIndicator = document.getElementById('pageIndicator');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+
+            // Calcular qué páginas mostrar
+            const leftPageIndex = currentPage;
+            const rightPageIndex = currentPage + 1;
+
+            // Renderizar contenido
+            leftPage.innerHTML = pages[leftPageIndex] ? pages[leftPageIndex].content : '';
+            rightPage.innerHTML = pages[rightPageIndex] ? pages[rightPageIndex].content : '';
+
+            // Actualizar indicador
+            const totalPages = pages.length;
+            pageIndicator.textContent = `${leftPageIndex + 1}-${Math.min(rightPageIndex + 1, totalPages)} / ${totalPages}`;
+
+            // Actualizar botones
+            prevBtn.disabled = currentPage === 0;
+            nextBtn.disabled = rightPageIndex >= totalPages - 1;
+
+            // Scroll al inicio de cada página
+            leftPage.scrollTop = 0;
+            rightPage.scrollTop = 0;
+        }
+
+        function nextPage() {
+            if (currentPage + 2 < pages.length) {
+                currentPage += 2;
+                renderPages();
+            }
+        }
+
+        function previousPage() {
+            if (currentPage > 0) {
+                currentPage -= 2;
+                renderPages();
+            }
+        }
+
+        // Atajos de teclado
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextPage();
+            if (e.key === 'ArrowLeft') previousPage();
+        });
+
+        // Renderizar páginas iniciales
+        renderPages();
+    </script>
+</body>
+</html>

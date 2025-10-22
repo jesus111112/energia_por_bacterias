@@ -1,0 +1,90 @@
+/* global.css */
+
+/* --- Botón flotante de regresar --- */
+.return-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: grab;
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.4);
+  transition: background 0.3s ease;
+  z-index: 1000;
+  user-select: none;
+}
+
+.return-button:hover {
+  background-color: #00a2ff;
+}
+
+.return-button:active {
+  cursor: grabbing;
+  transform: scale(1.05);
+}
+
+/* Agrega un ícono de flecha automáticamente */
+.return-button::before {
+  content: "← ";
+}
+/* --- Tooltip personalizado --- */
+.return-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 15px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: grab;
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.4);
+  transition: background 0.3s ease;
+  z-index: 1000;
+  user-select: none;
+}
+
+/* Tooltip */
+.return-button::after {
+  content: "Clic izquierdo: regresar | Clic derecho: mover";
+  position: absolute;
+  top: 130%; /* ⬅️ antes era bottom: 130% */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* Flechita del tooltip */
+.return-button::before {
+  content: "";
+  position: absolute;
+  top: 120%; /* antes era bottom: 120% */
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom-color: rgba(0, 0, 0, 0.85); /*  ahora apunta hacia abajo */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+
+/* Cuando pasas el mouse encima */
+.return-button:hover::after,
+.return-button:hover::before {
+  opacity: 1;
+}
