@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Manual de Usuario — Simulación: Bacterias + Magnetita en Celdas Microbianas</title>
+<style>
+  :root{
+    --bg:#071025;
+    --card:#0e1b35;
+    --accent:#4ecdc4;
+    --muted:#9fb3d6;
+    --text:#e8f0ff;
+    --danger:#ff6b6b;
+    --panel: #0b1530;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,var(--bg),#041125);color:var(--text);line-height:1.45}
+  .container{max-width:1100px;margin:28px auto;padding:20px}
+  header{display:flex;align-items:center;gap:16px}
+  header h1{margin:0;font-size:20px;color:var(--accent)}
+  header p{margin:0;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:1fr 330px;gap:18px;margin-top:18px}
+  .card{background:linear-gradient(180deg,var(--card),var(--panel));border-radius:12px;padding:16px;box-shadow:0 10px 30px rgba(2,6,23,0.6)}
+  .card h2{margin:0 0 8px 0;color:#fff;font-size:16px}
+  .muted{color:var(--muted);font-size:14px}
+  .phase{border-radius:10px;background:rgba(255,255,255,0.02);padding:10px;margin:8px 0}
+  .phase h3{margin:0 0 6px 0;font-size:15px;color:var(--accent)}
+  ul{margin:8px 0 12px 18px}
+  .controls{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;color:var(--text);cursor:default;font-weight:600}
+  .kbd{background:#04162a;border-radius:6px;padding:6px 8px;font-family:monospace;font-size:13px;color:var(--muted)}
+  .warning{background:linear-gradient(90deg,#2b0b0b,#401010);border-left:4px solid var(--danger);padding:12px;border-radius:8px;color:#ffd7d7}
+  .success{background:linear-gradient(90deg,#0b2b1a,#08321e);border-left:4px solid #2ecc71;padding:12px;border-radius:8px;color:#d7ffe8}
+  aside .card{position:sticky;top:20px}
+  .checklist li{margin-bottom:6px}
+  footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+  @media (max-width:980px){
+    .grid{grid-template-columns:1fr; padding-bottom:20px}
+    aside .card{position:static}
+  }
+</style>
+</head>
+<body>
+  <link rel="stylesheet" href="global.css">
+    <script src="drag-button.js" defer></script>
+
+    <button class="return-button" onclick="window.location.href='index.html'">
+    Regresar
+    </button>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Manual de usuario — Simulación: Bacterias + Magnetita en Celdas Microbianas</h1>
+        <p class="muted">Versión educativa — guía para usar la simulación y realizar demostraciones seguras en entorno didáctico.</p>
+      </div>
+    </header>
+
+    <div class="grid" role="main">
+      <!-- principal -->
+      <main class="card" aria-label="Contenido principal">
+        <h2>Resumen del proyecto</h2>
+        <p class="muted">Este proyecto usa una simulación visual para explorar cómo bacterias electrogénicas (p. ej. Geobacter/Shewanella en la literatura) pueden interactuar con nanopartículas de magnetita (Fe₃O₄) y colonizar el ánodo de una celda microbiana para producir energía eléctrica a partir de materia orgánica. <strong>Este manual explica las fases de la simulación, cómo usar los controles, interpretación de resultados y un procedimiento seguro para demostraciones en la vida real (no experimental).</strong></p>
+
+        <section class="phase" id="alcance">
+          <h3>Alcance y propósito</h3>
+          <p class="muted">Objetivos didácticos:</p>
+          <ul>
+            <li>Comprender conceptualmente las fases del cultivo y la incorporación de magnetita.</li>
+            <li>Visualizar la formación del biofilm y la dinámica de generación eléctrica en una MFC (celda microbiana).</li>
+            <li>Practicar presentación de resultados y análisis sin manipulación de materiales peligrosos.</li>
+          </ul>
+        </section>
+
+        <section class="phase" id="aviso">
+          <h3>Aviso de seguridad y ética</h3>
+          <div class="warning" role="alert">
+            <strong>Importante:</strong> No se incluyen ni deben seguirse instrucciones prácticas para cultivar bacterias ni sintetizar nanopartículas en instalaciones no autorizadas. Cualquier trabajo experimental real debe realizarse en laboratorios certificados, con personal calificado, permisos y medidas de bioseguridad. Este manual ofrece únicamente orientación conceptual y procedimientos de demostración seguros.
+          </div>
+        </section>
+
+        <section class="phase" id="phases">
+          <h3>Fases de la simulación (explicación conceptual)</h3>
+
+          <div>
+            <h4 class="muted">Fase 1 — Preparación del medio (simulado)</h4>
+            <p class="muted">Qué representa: la creación de un entorno nutritivo que permite el crecimiento microbiano. En la simulación se observan partículas que simbolizan nutrientes. Propósito: entender la importancia del sustrato como 'combustible'.</p>
+          </div>
+
+          <div>
+            <h4 class="muted">Fase 2 — Esterilización (simulada)</h4>
+            <p class="muted">Qué representa: control de contaminantes antes de inocular. En la simulación aparece un autoclave y efectos de vapor como representación conceptual.</p>
+          </div>
+
+          <div>
+            <h4 class="muted">Fase 3 — Síntesis de magnetita (simulada)</h4>
+            <p class="muted">Qué representa: generación de partículas magnéticas que pueden interactuar con bacterias y con los electrodos. La simulación muestra la formación de partículas y campos magnéticos.</p>
+          </div>
+
+          <div>
+            <h4 class="muted">Fase 4 — Funcionalización (simulada)</h4>
+            <p class="muted">Qué representa: preparación de nanopartículas para que sean compatibles con células. Visualmente aparece un recubrimiento en las nanopartículas.</p>
+          </div>
+
+          <div>
+            <h4 class="muted">Fase 5 — Obtención de bacterias (contexto)</h4>
+            <p class="muted">Qué representa: identificación o toma de cepas de interés para electrogénesis (mencionadas solo a nivel conceptual). En la simulación aparecen placas con colonias diferenciadas por color.</p>
+          </div>
+
+          <div>
+            <h4 class="muted">Fase 6 — Cultivo inicial (simulado)</h4>
+            <p class="muted">Qué representa: crecimiento en un matraz agitado para alcanzar fase activa. La simulación ilustra bacterias multiplicándose.</p>
+          </div>
+
+          <div>
+            <h4 class="muted">Fase 7 — Incorporación de magnetita (simulada)</h4>
+            <p class="muted">Qué representa: mezcla de nanopartículas con bacterias activas para que interactúen (la simulación muestra puntos negros/púrpura uniéndose a células rojas).</p>
+          </div>
+
+          <div>
+            <h4 class="muted">Fase 8 — Verificación (simulada)</h4>
+            <p class="muted">Qué representa: controles de calidad y confirmación de asociación nanopartícula–bacteria (microscopio esquemático, test magnético simbólico).</p>
+          </div>
+
+          <div>
+            <h4 class="muted">Fase 9 — Preparación de electrodos (simulada)</h4>
+            <p class="muted">Qué representa: acondicionamiento del ánodo para favorecer la adhesión y formación de biofilm. Se muestra textura y limpieza simbólica.</p>
+          </div>
+
+          <div>
+            <h4 class="muted">Fase 10 — Inoculación en la celda (simulada)</h4>
+            <p class="muted">Qué representa: transferencia del consorcio bacteria+magnetita hacia la cámara anódica. Visualmente se ve la inyección y la difusión de células.</p>
+          </div>
+
+          <div>
+            <h4 class="muted">Fase 11 — Aclimatación y biofilm (simulada)</h4>
+            <p class="muted">Qué representa: formación gradual de biopelícula en la superficie del ánodo. La simulación permite ver el crecimiento de la capa y un indicador de voltaje emergente.</p>
+          </div>
+
+          <div>
+            <h4 class="muted">Fase 12 — Activación y producción (simulada)</h4>
+            <p class="muted">Qué representa: celda en funcionamiento con generación estable de electricidad a partir de la oxidación de materia orgánica por la comunidad microbiana asociada a las nanopartículas.</p>
+          </div>
+        </section>
+
+        <section class="phase" id="uso-sim">
+          <h3>Cómo usar la simulación (panel de control)</h3>
+          <p class="muted">Descripción de controles comunes en la interfaz:</p>
+          <div class="controls" aria-hidden="false">
+            <div class="btn">▶ / ❚❚ Reproducir / Pausa</div>
+            <div class="btn">◀ / ▶ Cambiar paso (anterior / siguiente)</div>
+            <div class="btn">Vel rot — deslizador de velocidad</div>
+            <div class="btn">Reset rot — restablecer rotación</div>
+            <div class="btn">Clic sobre canvas — alterna play/pause</div>
+          </div>
+          <ul>
+            <li>Usa <span class="kbd">Next</span> y <span class="kbd">Prev</span> para recorrer fases y explicar cada una al público.</li>
+            <li>Sube la velocidad cuando quieras mostrar dinámicas rápido; pásala a baja velocidad para análisis detenido.</li>
+            <li>La simulación es visual: apoya cada fase con texto en el panel lateral para explicar qué representa.</li>
+          </ul>
+        </section>
+
+        <section class="phase" id="interpretacion">
+          <h3>Interpretación de la simulación</h3>
+          <ul>
+            <li><strong>Biofilm visible:</strong> indicativo de colonización en ánodo (visual). En la simulación, la barra de voltaje sube conforme avanza la formación del biofilm.</li>
+            <li><strong>Partículas magnéticas alrededor de células:</strong> representan asociación física/funcionalidad que puede facilitar transferencia electrónica en modelos conceptuales.</li>
+            <li><strong>Voltaje y estabilidad:</strong> la simulación muestra tendencias — en la vida real esos valores dependen de muchos factores y requieren instrumentación especializada para medir.</li>
+          </ul>
+        </section>
+
+        <section class="phase" id="demo-real">
+          <h3>Procedimiento ejemplar para una demostración segura (en aula)</h3>
+          <p class="muted">Este flujo está pensado para una demostración educativa sin manejo de cultivos reales ni síntesis de nanopartículas. Usa la simulación, maquetas y materiales seguros:</p>
+          <ol>
+            <li><strong>Preparación de la presentación:</strong> carga la simulación y prepara diapositivas con los objetivos y la conceptualización.</li>
+            <li><strong>Demostración visual:</strong> recorre cada fase en la simulación explicando qué representa (utiliza marcadores en pantalla para destacar elementos).</li>
+            <li><strong>Maqueta segura:</strong> muestra una maqueta de una celda MFC hecha con materiales inofensivos (celdas conectadas a un voltímetro simulado o LEDs alimentados por baterías) para ilustrar el circuito eléctrico.</li>
+            <li><strong>Actividad interactiva:</strong> pide a la audiencia que prediga qué pasará con el voltaje cuando crece el biofilm: escribe hipótesis y luego compara con la simulación.</li>
+            <li><strong>Pauta de preguntas:</strong> prepara preguntas guiadas (ver sección "Guion para el presentador").</li>
+          </ol>
+          <div class="success" role="note">
+            Recomendación: si deseas mostrar experimentos reales, coordina con un laboratorio universitario o técnico y solicita supervisión por personal calificado. No realices experimentos biológicos en el aula sin autorización.
+          </div>
+        </section>
+
+        <section class="phase" id="recursos">
+          <h3>Recursos y lecturas recomendadas (educativas)</h3>
+          <p class="muted">Busca literatura académica y cursos sobre:</p>
+          <ul>
+            <li>Microbiología ambiental y bacterias electrogénicas — textos de revisión.</li>
+            <li>Celdas microbianas de combustible (MFC) — artículos de introducción y revisiones.</li>
+            <li>Principios de nanotecnología aplicados a la biomedicina y bioelectrónica (lectura conceptual).</li>
+          </ul>
+          <p class="muted">Si deseas referencias puntuales para investigación, puedo ayudarte a buscarlas y citarlas (resumen y enlaces a artículos de revisión).</p>
+        </section>
+
+        <section class="phase" id="appendix">
+          <h3>Apéndice: plantillas útiles</h3>
+
+          <h4 class="muted">Guion corto para presentador (3–5 minutos por fase)</h4>
+          <ol>
+            <li>Introducción del objetivo de la fase (15–20 s).</li>
+            <li>Explicación de los elementos visuales en la simulación (30–60 s).</li>
+            <li>Pregunta al público / comparativa con la vida real (20–30 s).</li>
+            <li>Transición al siguiente paso (10–15 s).</li>
+          </ol>
+
+          <h4 class="muted">Checklist imprimible (antes de la demostración)</h4>
+          <ul class="checklist">
+            <li>Archivo de simulación cargado y probado en el navegador.</li>
+            <li>Proyector o pantalla conectada y brillo ajustado.</li>
+            <li>Maqueta o diagrama impreso para apoyo visual.</li>
+            <li>Guion impreso para cada miembro del equipo (si aplica).</li>
+            <li>Tiempo asignado para preguntas y discusión.</li>
+          </ul>
+        </section>
+
+      </main>
+
+      <!-- lateral -->
+      <aside>
+        <div class="card" aria-label="Panel lateral con resumen">
+          <h2>Resumen rápido</h2>
+          <p class="muted">Uso: educativo / presentación / análisis conceptual.</p>
+
+          <h3 style="margin-top:12px">Puntos clave</h3>
+          <ul>
+            <li>La simulación es una herramienta conceptual — no reemplaza experimentos controlados.</li>
+            <li>Respeta normas de bioseguridad — cualquier experimento real requiere laboratorio autorizado.</li>
+            <li>Activa controles lentamente para explicar cada fenómeno.</li>
+          </ul>
+
+          <h3 style="margin-top:12px">Guion para preguntas</h3>
+          <ul>
+            <li>¿Por qué el biofilm mejora la conductividad entre bacteria y ánodo?</li>
+            <li>¿Qué papel podrían jugar las nanopartículas en facilitar transferencia electrónica?</li>
+            <li>¿Qué variables medirías en un experimento real (conceptual)?</li>
+          </ul>
+
+          <h3 style="margin-top:12px">Contacto y sugerencias</h3>
+          <p class="muted">¿Quieres que genere diapositivas de apoyo (HTML/PowerPoint) o una hoja imprimible para alumnos? Puedo crearlas ahora.</p>
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+      <p>Este manual es de carácter educativo. No contiene instrucciones de laboratorio ni protocolos prácticos para experimentar con bacterias o nanopartículas. Para experimentación real contacta con un laboratorio acreditado y personal autorizado.</p>
+    </footer>
+  </div>
+</body>
+</html>
