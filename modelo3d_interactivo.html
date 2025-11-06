@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celda MFC 3D Interactiva</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        /* Panel de control principal */
+        .control-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 320px;
+            max-height: 90vh;
+            background: rgba(15, 23, 42, 0.95);
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+        
+        .control-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+        .control-panel::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+        .control-panel::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+        }
+        
+        .panel-header {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #fbbf24;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .voltage-display {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .voltage-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .voltage-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .efficiency-bar {
+            background: rgba(255,255,255,0.1);
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .efficiency-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #fbbf24, #10b981);
+            transition: width 0.3s ease;
+        }
+        
+        .control-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #fbbf24;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .control-item {
+            margin-bottom: 15px;
+        }
+        
+        .control-label {
+            font-size: 13px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .control-value {
+            color: #60a5fa;
+            font-weight: 600;
+        }
+        
+        select, input[type="range"] {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            color: white;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        select option {
+            background: #1e293b;
+            color: white;
+        }
+        
+        input[type="range"] {
+            padding: 0;
+            height: 6px;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #60a5fa;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #60a5fa;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .material-info {
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .stat-box {
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #10b981;
+        }
+        
+        .stat-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 4px;
+        }
+        
+        .toggle-btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-bottom: 10px;
+        }
+        
+        .toggle-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .toggle-btn:active {
+            transform: translateY(0);
+        }
+        
+        .warning {
+            background: rgba(239, 68, 68, 0.2);
+            border-left: 3px solid #ef4444;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        
+        .success {
+            background: rgba(16, 185, 129, 0.2);
+            border-left: 3px solid #10b981;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        /* Info panel derecho */
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 280px;
+            background: rgba(15, 23, 42, 0.95);
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        
+        .info-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #fbbf24;
+        }
+        
+        .info-item {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-item-title {
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 4px;
+        }
+        
+        .info-item-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .color-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <!-- Panel de control principal -->
+    <div class="control-panel">
+        <div class="panel-header">
+            ⚡ Control de Celda MFC
+        </div>
+        
+        <div class="voltage-display">
+            <div class="voltage-value" id="voltage-output">0.00 V</div>
+            <div class="voltage-label">Voltaje Generado</div>
+            <div class="efficiency-bar">
+                <div class="efficiency-fill" id="efficiency-bar" style="width: 0%"></div>
+            </div>
+            <div class="voltage-label" style="margin-top: 8px;">
+                Eficiencia: <span id="efficiency-value">0%</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-value" id="power-output">0</div>
+                <div class="stat-label">mW/m²</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="current-output">0</div>
+                <div class="stat-label">mA</div>
+            </div>
+        </div>
+        
+        <!-- ÁNODO -->
+        <div class="control-section">
+            <div class="section-title">🟡 Ánodo (Electrodo -)</div>
+            
+            <div class="control-item">
+                <div class="control-label">
+                    <span>Material del Electrodo</span>
+                </div>
+                <select id="anode-material">
+                    <option value="graphite">Grafito (estándar)</option>
+                    <option value="carbon-cloth">Tela de carbono</option>
+                    <option value="activated-carbon">Carbón activado</option>
+                    <option value="carbon-felt">Fieltro de carbono</option>
+                    <option value="tungsten">Tungsteno</option>
+                    <option value="molybdenum">Molibdeno</option>
+                    <option value="titanium">Titanio</option>
+                </select>
+                <div class="material-info" id="anode-info">
+                    Conductividad: Alta | Costo: Medio | Durabilidad: Excelente
+                </div>
+            </div>
+            
+            <div class="control-item">
+                <div class="control-label">
+                    <span>Cantidad de Bacterias</span>
+                    <span class="control-value" id="bacteria-count">30</span>
+                </div>
+                <input type="range" id="bacteria-slider" min="10" max="100" value="30" step="5">
+            </div>
+            
+            <div class="control-item">
+                <div class="control-label">
+                    <span>Tipo de Bacteria</span>
+                </div>
+                <select id="bacteria-type">
+                    <option value="geobacter">Geobacter sulfurreducens</option>
+                    <option value="shewanella">Shewanella oneidensis</option>
+                    <option value="pseudomonas">Pseudomonas aeruginosa</option>
+                    <option value="mixed">Cultivo mixto</option>
+                </select>
+                <div class="material-info" id="bacteria-info">
+                    Eficiencia: 85% | Velocidad: Media | Voltaje: 0.3-0.5V
+                </div>
+            </div>
+            
+            <div class="control-item">
+                <div class="control-label">
+                    <span>Magnetita (Fe₃O₄)</span>
+                    <span class="control-value" id="magnetite-value">0 mg/L</span>
+                </div>
+                <input type="range" id="magnetite-slider" min="0" max="200" value="0" step="10">
+                <div class="material-info">
+                    Aumenta conductividad eléctrica y transferencia de electrones
+                </div>
+            </div>
+            
+            <div class="control-item">
+                <div class="control-label">
+                    <span>Sustrato Orgánico</span>
+                </div>
+                <select id="substrate-type">
+                    <option value="glucose">Glucosa</option>
+                    <option value="acetate">Acetato</option>
+                    <option value="wastewater">Agua residual</option>
+                    <option value="cellulose">Celulosa</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- MEMBRANA -->
+        <div class="control-section">
+            <div class="section-title">🟢 Membrana de Intercambio</div>
+            
+            <div class="control-item">
+                <div class="control-label">
+                    <span>Tipo de Membrana</span>
+                </div>
+                <select id="membrane-type">
+                    <option value="nafion">Nafion (PEM)</option>
+                    <option value="ultrex">Ultrex</option>
+                    <option value="ceramic">Cerámica</option>
+                    <option value="agar">Agar-agar</option>
+                    <option value="none">Sin membrana</option>
+                </select>
+                <div class="material-info" id="membrane-info">
+                    Conductividad H⁺: Excelente | Resistencia: Baja | Selectividad: Alta
+                </div>
+            </div>
+            
+            <div class="control-item">
+                <div class="control-label">
+                    <span>Grosor de Membrana</span>
+                    <span class="control-value" id="membrane-thickness">0.15 mm</span>
+                </div>
+                <input type="range" id="membrane-slider" min="0.05" max="0.5" value="0.15" step="0.05">
+            </div>
+        </div>
+        
+        <!-- CÁTODO -->
+        <div class="control-section">
+            <div class="section-title">🔵 Cátodo (Electrodo +)</div>
+            
+            <div class="control-item">
+                <div class="control-label">
+                    <span>Material del Electrodo</span>
+                </div>
+                <select id="cathode-material">
+                    <option value="stainless-steel">Acero inoxidable</option>
+                    <option value="carbon">Carbono</option>
+                    <option value="platinum">Platino</option>
+                    <option value="zinc">Zinc (pilas alcalinas)</option>
+                    <option value="aluminum">Aluminio</option>
+                    <option value="magnesium">Magnesio</option>
+                </select>
+                <div class="material-info" id="cathode-info">
+                    Conductividad: Alta | Resistencia a corrosión: Excelente
+                </div>
+            </div>
+            
+            <div class="control-item">
+                <div class="control-label">
+                    <span>Catalizador</span>
+                </div>
+                <select id="catalyst-type">
+                    <option value="none">Sin catalizador</option>
+                    <option value="platinum">Platino (Pt)</option>
+                    <option value="mno2">Óxido de manganeso (MnO₂)</option>
+                    <option value="fe2o3">Óxido de hierro (Fe₂O₃)</option>
+                    <option value="cobalto">Cobalto</option>
+                </select>
+                <div class="material-info" id="catalyst-info">
+                    Sin catalizador - Reacción lenta
+                </div>
+            </div>
+            
+            <div class="control-item">
+                <div class="control-label">
+                    <span>Oxígeno Disuelto</span>
+                    <span class="control-value" id="oxygen-value">8 mg/L</span>
+                </div>
+                <input type="range" id="oxygen-slider" min="2" max="15" value="8" step="0.5">
+            </div>
+        </div>
+        
+        <!-- CONDICIONES AMBIENTALES -->
+        <div class="control-section">
+            <div class="section-title">🌡️ Condiciones Ambientales</div>
+            
+            <div class="control-item">
+                <div class="control-label">
+                    <span>Temperatura</span>
+                    <span class="control-value" id="temp-value">30°C</span>
+                </div>
+                <input type="range" id="temp-slider" min="15" max="45" value="30" step="1">
+            </div>
+            
+            <div class="control-item">
+                <div class="control-label">
+                    <span>pH</span>
+                    <span class="control-value" id="ph-value">7.0</span>
+                </div>
+                <input type="range" id="ph-slider" min="5" max="9" value="7" step="0.1">
+            </div>
+        </div>
+        
+        <!-- CONTROLES -->
+        <button class="toggle-btn" onclick="toggleRotation()">
+            <span id="rotation-text">⏸ Pausar Rotación</span>
+        </button>
+        
+        <button class="toggle-btn" onclick="resetToDefaults()">
+            🔄 Restaurar Valores Por Defecto
+        </button>
+        
+        <div id="status-message"></div>
+    </div>
+    
+    <!-- Panel de información -->
+    <div class="info-panel">
+        <div class="info-title">📊 Estado Actual</div>
+        
+        <div class="info-item">
+            <div class="info-item-title">Configuración del Ánodo</div>
+            <div class="info-item-value" id="current-anode">Grafito + Geobacter</div>
+        </div>
+        
+        <div class="info-item">
+            <div class="info-item-title">Configuración del Cátodo</div>
+            <div class="info-item-value" id="current-cathode">Acero inoxidable</div>
+        </div>
+        
+        <div class="info-item">
+            <div class="info-item-title">Producción de H₂</div>
+            <div class="info-item-value" id="h2-production">0.0 mL/h</div>
+        </div>
+        
+        <div class="info-item">
+            <div class="info-item-title">CO₂ Emitido</div>
+            <div class="info-item-value" id="co2-emission">0.0 mL/h</div>
+        </div>
+        
+        <div class="info-item">
+            <div class="info-item-title">Tiempo de Operación</div>
+            <div class="info-item-value" id="operation-time">0 min</div>
+        </div>
+        
+        <div class="info-item">
+            <div class="info-item-title">Partículas Activas</div>
+            <div class="info-item-value">
+                <span class="color-indicator" style="background: #ff1744;"></span>Bacterias: <span id="active-bacteria">30</span><br>
+                <span class="color-indicator" style="background: #ff6b6b;"></span>Protones: <span id="active-protons">15</span><br>
+                <span class="color-indicator" style="background: #ffd700;"></span>Electrones: <span id="active-electrons">20</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let scene, camera, renderer, cableCurve;
+        let bacteria = [];
+        let protons = [];
+        let electrons = [];
+        let co2Molecules = [];
+        let h2Molecules = [];
+        let magnetiteParticles = [];
+        let time = 0;
+        let rotation = true;
+        let operationMinutes = 0;
+        
+        // Configuración actual
+        let config = {
+            anodeMaterial: 'graphite',
+            bacteriaCount: 30,
+            bacteriaType: 'geobacter',
+            magnetiteLevel: 0,
+            substrateType: 'glucose',
+            membraneType: 'nafion',
+            membraneThickness: 0.15,
+            cathodeMaterial: 'stainless-steel',
+            catalystType: 'none',
+            oxygenLevel: 8,
+            temperature: 30,
+            ph: 7.0
+        };
+        
+        // Propiedades de materiales
+        const materialProps = {
+            anode: {
+                'graphite': {conductivity: 0.9, cost: 'Medio', durability: 'Excelente', voltage: 1.0},
+                'carbon-cloth': {conductivity: 0.95, cost: 'Alto', durability: 'Buena', voltage: 1.05},
+                'activated-carbon': {conductivity: 0.85, cost: 'Medio', durability: 'Buena', voltage: 0.95},
+                'carbon-felt': {conductivity: 0.92, cost: 'Alto', durability: 'Excelente', voltage: 1.02},
+                'tungsten': {conductivity: 0.88, cost: 'Muy Alto', durability: 'Excepcional', voltage: 0.98},
+                'molybdenum': {conductivity: 0.86, cost: 'Alto', durability: 'Excelente', voltage: 0.96},
+                'titanium': {conductivity: 0.75, cost: 'Muy Alto', durability: 'Excepcional', voltage: 0.85}
+            },
+            bacteria: {
+                'geobacter': {efficiency: 0.85, speed: 0.8, voltage: 1.0, info: 'Eficiencia: 85% | Velocidad: Media | Voltaje: 0.3-0.5V'},
+                'shewanella': {efficiency: 0.78, speed: 0.9, voltage: 0.95, info: 'Eficiencia: 78% | Velocidad: Alta | Voltaje: 0.25-0.45V'},
+                'pseudomonas': {efficiency: 0.72, speed: 0.85, voltage: 0.88, info: 'Eficiencia: 72% | Velocidad: Media-Alta | Voltaje: 0.2-0.4V'},
+                'mixed': {efficiency: 0.80, speed: 0.95, voltage: 0.92, info: 'Eficiencia: 80% | Velocidad: Alta | Voltaje: 0.25-0.48V'}
+            },
+            membrane: {
+                'nafion': {conductivity: 1.0, resistance: 0.1, selectivity: 0.95, info: 'Conductividad H⁺: Excelente | Resistencia: Baja | Selectividad: Alta'},
+                'ultrex': {conductivity: 0.92, resistance: 0.15, selectivity: 0.90, info: 'Conductividad H⁺: Muy buena | Resistencia: Baja | Selectividad: Alta'},
+                'ceramic': {conductivity: 0.75, resistance: 0.25, selectivity: 0.85, info: 'Conductividad H⁺: Buena | Resistencia: Media | Selectividad: Buena'},
+                'agar': {conductivity: 0.60, resistance: 0.40, selectivity: 0.70, info: 'Conductividad H⁺: Media | Resistencia: Alta | Selectividad: Media'},
+                'none': {conductivity: 0.30, resistance: 0.80, selectivity: 0.40, info: 'Sin separación - Riesgo de cortocircuito'}
+            },
+            cathode: {
+                'stainless-steel': {conductivity: 0.90, corrosion: 'Excelente', voltage: 1.0},
+                'carbon': {conductivity: 0.88, corrosion: 'Buena', voltage: 0.95},
+                'platinum': {conductivity: 1.0, corrosion: 'Excepcional', voltage: 1.15},
+                'zinc': {conductivity: 0.75, corrosion: 'Media', voltage: 0.88},
+                'aluminum': {conductivity: 0.80, corrosion: 'Buena', voltage: 0.85},
+                'magnesium': {conductivity: 0.70, corrosion: 'Baja', voltage: 0.80}
+            },
+            catalyst: {
+                'none': {efficiency: 0.5, info: 'Sin catalizador - Reacción lenta'},
+                'platinum': {efficiency: 1.0, info: 'Catalizador óptimo - Muy caro'},
+                'mno2': {efficiency: 0.85, info: 'Buena eficiencia - Costo moderado'},
+                'fe2o3': {efficiency: 0.75, info: 'Eficiencia media - Económico'},
+                'cobalto': {efficiency: 0.88, info: 'Alta eficiencia - Costo alto'}
+            }
+        };
+
+        function init() {
+            const container = document.getElementById('canvas-container');
+            
+            // Escena
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a2e);
+            
+            // Cámara
+            camera = new THREE.PerspectiveCamera(
+                60,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(8, 6, 12);
+            camera.lookAt(0, 0, 0);
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+            
+            // Iluminación
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 10);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+            
+            const pointLight = new THREE.PointLight(0x4299e1, 0.6);
+            pointLight.position.set(0, 5, 0);
+            scene.add(pointLight);
+            
+            createMFCComponents();
+            setupEventListeners();
+            animate();
+        }
+        
+        function createMFCComponents() {
+            // Cámara anódica
+            const anodeGeometry = new THREE.BoxGeometry(3, 4, 3);
+            const anodeMaterial = new THREE.MeshPhongMaterial({
+                color: 0xfbbf24,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+            const anodeChamber = new THREE.Mesh(anodeGeometry, anodeMaterial);
+            anodeChamber.position.set(-2.5, 0, 0);
+            anodeChamber.name = 'anodeChamber';
+            scene.add(anodeChamber);
+            
+            // Líquido orgánico
+            const liquidGeometry = new THREE.BoxGeometry(2.8, 3, 2.8);
+            const liquidMaterial = new THREE.MeshPhongMaterial({
+                color: 0x8b7355,
+                transparent: true,
+                opacity: 0.5
+            });
+            const organicMatter = new THREE.Mesh(liquidGeometry, liquidMaterial);
+            organicMatter.position.set(-2.5, -0.5, 0);
+            organicMatter.name = 'organicMatter';
+            scene.add(organicMatter);
+            
+            // Electrodo ánodo
+            const anodeElectrodeGeometry = new THREE.CylinderGeometry(0.3, 0.3, 3.5, 16);
+            const anodeElectrodeMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x2c2c2c,
+                emissive: 0x111111
+            });
+            const anodeElectrode = new THREE.Mesh(anodeElectrodeGeometry, anodeElectrodeMaterial);
+            anodeElectrode.position.set(-2.5, 0, 0);
+            anodeElectrode.name = 'anodeElectrode';
+            scene.add(anodeElectrode);
+            
+            // Crear bacterias iniciales
+            updateBacteriaCount(config.bacteriaCount);
+            
+            // Membrana
+            const membraneGeometry = new THREE.BoxGeometry(0.15, 4, 3);
+            const membraneMaterial = new THREE.MeshPhongMaterial({
+                color: 0x10b981,
+                transparent: true,
+                opacity: 0.6
+            });
+            const membrane = new THREE.Mesh(membraneGeometry, membraneMaterial);
+            membrane.position.set(0, 0, 0);
+            membrane.name = 'membrane';
+            scene.add(membrane);
+            
+            // Crear protones
+            for (let i = 0; i < 15; i++) {
+                const protonGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+                const protonMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xff6b6b,
+                    emissive: 0xff0000,
+                    emissiveIntensity: 0.5
+                });
+                const proton = new THREE.Mesh(protonGeometry, protonMaterial);
+                proton.position.set(
+                    -1 + Math.random() * 2,
+                    (Math.random() - 0.5) * 3.5,
+                    (Math.random() - 0.5) * 2.5
+                );
+                proton.userData.velocity = Math.random() * 0.02 + 0.01;
+                protons.push(proton);
+                scene.add(proton);
+            }
+            
+            // Cámara catódica
+            const cathodeGeometry = new THREE.BoxGeometry(3, 4, 3);
+            const cathodeMaterial = new THREE.MeshPhongMaterial({
+                color: 0x60a5fa,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+            const cathodeChamber = new THREE.Mesh(cathodeGeometry, cathodeMaterial);
+            cathodeChamber.position.set(2.5, 0, 0);
+            cathodeChamber.name = 'cathodeChamber';
+            scene.add(cathodeChamber);
+            
+            // Solución catódica
+            const cathodeFluidGeometry = new THREE.BoxGeometry(2.8, 3, 2.8);
+            const cathodeFluidMaterial = new THREE.MeshPhongMaterial({
+                color: 0x4fc3f7,
+                transparent: true,
+                opacity: 0.4
+            });
+            const cathodeFluid = new THREE.Mesh(cathodeFluidGeometry, cathodeFluidMaterial);
+            cathodeFluid.position.set(2.5, -0.5, 0);
+            cathodeFluid.name = 'cathodeFluid';
+            scene.add(cathodeFluid);
+            
+            // Electrodo cátodo
+            const cathodeElectrodeGeometry = new THREE.CylinderGeometry(0.3, 0.3, 3.5, 16);
+            const cathodeElectrodeMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x757575,
+                metalness: 0.8
+            });
+            const cathodeElectrode = new THREE.Mesh(cathodeElectrodeGeometry, cathodeElectrodeMaterial);
+            cathodeElectrode.position.set(2.5, 0, 0);
+            cathodeElectrode.name = 'cathodeElectrode';
+            scene.add(cathodeElectrode);
+            
+            // CO2
+            for (let i = 0; i < 8; i++) {
+                const co2Geometry = new THREE.SphereGeometry(0.12, 8, 8);
+                const co2Material = new THREE.MeshPhongMaterial({
+                    color: 0x666666,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const co2 = new THREE.Mesh(co2Geometry, co2Material);
+                co2.position.set(-2.5, 2 + Math.random(), (Math.random() - 0.5) * 2);
+                co2.userData.velocity = Math.random() * 0.02 + 0.01;
+                co2Molecules.push(co2);
+                scene.add(co2);
+            }
+            
+            // Fuente externa
+            const powerSourceGeometry = new THREE.BoxGeometry(1, 0.8, 0.6);
+            const powerSourceMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x6366f1,
+                emissive: 0x4338ca,
+                emissiveIntensity: 0.3
+            });
+            const powerSource = new THREE.Mesh(powerSourceGeometry, powerSourceMaterial);
+            powerSource.position.set(2.5, 3, 0);
+            scene.add(powerSource);
+            
+            // Cable del circuito
+            cableCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-2.5, 2.5, 0),
+                new THREE.Vector3(-2.5, 3.5, 0),
+                new THREE.Vector3(0, 4, 0),
+                new THREE.Vector3(2.5, 3.5, 0),
+                new THREE.Vector3(2.5, 2.5, 0)
+            ]);
+            
+            const cableGeometry = new THREE.TubeGeometry(cableCurve, 50, 0.08, 8, false);
+            const cableMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0xfbbf24,
+                emissive: 0xf59e0b,
+                emissiveIntensity: 0.2
+            });
+            const cable = new THREE.Mesh(cableGeometry, cableMaterial);
+            scene.add(cable);
+            
+            // Electrones en el cable
+            for (let i = 0; i < 20; i++) {
+                const electronGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+                const electronMaterial = new THREE.MeshPhongMaterial({
+                    color: 0xffd700,
+                    emissive: 0xffaa00,
+                    emissiveIntensity: 0.8
+                });
+                const electron = new THREE.Mesh(electronGeometry, electronMaterial);
+                const t = i / 20;
+                const point = cableCurve.getPoint(t);
+                electron.position.copy(point);
+                electron.userData.t = t;
+                electrons.push(electron);
+                scene.add(electron);
+            }
+            
+            // Moléculas de H2
+            for (let i = 0; i < 6; i++) {
+                const h2Group = new THREE.Group();
+                
+                const h1Geometry = new THREE.SphereGeometry(0.15, 8, 8);
+                const h1Material = new THREE.MeshPhongMaterial({ color: 0xe0e0e0 });
+                const h1 = new THREE.Mesh(h1Geometry, h1Material);
+                h1.position.set(-0.15, 0, 0);
+                
+                const h2Geometry = new THREE.SphereGeometry(0.15, 8, 8);
+                const h2Material = new THREE.MeshPhongMaterial({ color: 0xe0e0e0 });
+                const h2 = new THREE.Mesh(h2Geometry, h2Material);
+                h2.position.set(0.15, 0, 0);
+                
+                h2Group.add(h1);
+                h2Group.add(h2);
+                h2Group.position.set(2.5, 2 + Math.random() * 2, (Math.random() - 0.5) * 2);
+                h2Group.userData.velocity = Math.random() * 0.015 + 0.01;
+                h2Molecules.push(h2Group);
+                scene.add(h2Group);
+            }
+        }
+        
+        function updateBacteriaCount(count) {
+            // Remover bacterias existentes
+            bacteria.forEach(b => scene.remove(b));
+            bacteria = [];
+            
+            // Crear nuevas bacterias
+            const bacteriaColors = [0xff1744, 0x00e676, 0x2979ff, 0xff9100];
+            for (let i = 0; i < count; i++) {
+                const bacteriaGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+                const color = bacteriaColors[Math.floor(Math.random() * bacteriaColors.length)];
+                const bacteriaMaterial = new THREE.MeshPhongMaterial({
+                    color: color,
+                    emissive: color,
+                    emissiveIntensity: 0.3
+                });
+                const bacterium = new THREE.Mesh(bacteriaGeometry, bacteriaMaterial);
+                bacterium.position.set(
+                    -2.5 + (Math.random() - 0.5) * 2.5,
+                    (Math.random() - 0.5) * 3,
+                    (Math.random() - 0.5) * 2.5
+                );
+                bacteria.push(bacterium);
+                scene.add(bacterium);
+            }
+        }
+        
+        function updateMagnetiteParticles(level) {
+            // Remover partículas existentes
+            magnetiteParticles.forEach(p => scene.remove(p));
+            magnetiteParticles = [];
+            
+            if (level === 0) return;
+            
+            // Crear partículas de magnetita
+            const particleCount = Math.floor(level / 2); // 1 partícula cada 2 mg/L
+            for (let i = 0; i < particleCount; i++) {
+                const magnetiteGeometry = new THREE.SphereGeometry(0.06, 6, 6);
+                const magnetiteMaterial = new THREE.MeshPhongMaterial({
+                    color: 0x8e44ad,
+                    emissive: 0x6a1b9a,
+                    emissiveIntensity: 0.4
+                });
+                const particle = new THREE.Mesh(magnetiteGeometry, magnetiteMaterial);
+                particle.position.set(
+                    -2.5 + (Math.random() - 0.5) * 2.5,
+                    (Math.random() - 0.5) * 3,
+                    (Math.random() - 0.5) * 2.5
+                );
+                magnetiteParticles.push(particle);
+                scene.add(particle);
+            }
+        }
+        
+        function calculatePerformance() {
+            // Calcular voltaje basado en configuración
+            let baseVoltage = 0.3;
+            
+            // Efecto del material del ánodo
+            baseVoltage *= materialProps.anode[config.anodeMaterial].voltage;
+            
+            // Efecto de las bacterias
+            baseVoltage *= materialProps.bacteria[config.bacteriaType].voltage;
+            const bacteriaFactor = config.bacteriaCount / 30; // 30 es el valor base
+            baseVoltage *= (0.5 + bacteriaFactor * 0.5);
+            
+            // Efecto de la magnetita
+            const magnetiteFactor = 1 + (config.magnetiteLevel / 200) * 0.3; // +30% máximo
+            baseVoltage *= magnetiteFactor;
+            
+            // Efecto de la membrana
+            const membraneFactor = materialProps.membrane[config.membraneType].conductivity;
+            baseVoltage *= membraneFactor;
+            
+            // Efecto del grosor de membrana (más grueso = más resistencia)
+            const thicknessFactor = 1 - (config.membraneThickness - 0.15) * 0.5;
+            baseVoltage *= Math.max(0.5, thicknessFactor);
+            
+            // Efecto del material del cátodo
+            baseVoltage *= materialProps.cathode[config.cathodeMaterial].voltage;
+            
+            // Efecto del catalizador
+            baseVoltage *= materialProps.catalyst[config.catalystType].efficiency;
+            
+            // Efecto del oxígeno
+            const oxygenFactor = Math.min(config.oxygenLevel / 8, 1.2);
+            baseVoltage *= oxygenFactor;
+            
+            // Efecto de la temperatura (óptimo a 30°C)
+            const tempDiff = Math.abs(config.temperature - 30);
+            const tempFactor = 1 - (tempDiff * 0.02);
+            baseVoltage *= Math.max(0.5, tempFactor);
+            
+            // Efecto del pH (óptimo a 7.0)
+            const phDiff = Math.abs(config.ph - 7.0);
+            const phFactor = 1 - (phDiff * 0.1);
+            baseVoltage *= Math.max(0.5, phFactor);
+            
+            // Añadir variación temporal realista
+            baseVoltage += Math.sin(time * 0.5) * 0.05;
+            
+            // Calcular otros parámetros
+            const efficiency = Math.min((baseVoltage / 0.8) * 100, 100);
+            const power = (baseVoltage * baseVoltage / 100) * 1000; // mW/m²
+            const current = (baseVoltage / 10) * 1000; // mA
+            
+            // Producción de gases
+            const h2Production = (baseVoltage / 0.5) * bacteriaFactor * 2.5;
+            const co2Emission = (baseVoltage / 0.5) * bacteriaFactor * 3.8;
+            
+            return {
+                voltage: Math.max(0, baseVoltage),
+                efficiency: Math.max(0, efficiency),
+                power: Math.max(0, power),
+                current: Math.max(0, current),
+                h2Production: Math.max(0, h2Production),
+                co2Emission: Math.max(0, co2Emission)
+            };
+        }
+        
+        function updateDisplay() {
+            const perf = calculatePerformance();
+            
+            document.getElementById('voltage-output').textContent = perf.voltage.toFixed(2) + ' V';
+            document.getElementById('efficiency-value').textContent = perf.efficiency.toFixed(0) + '%';
+            document.getElementById('efficiency-bar').style.width = perf.efficiency + '%';
+            document.getElementById('power-output').textContent = perf.power.toFixed(0);
+            document.getElementById('current-output').textContent = perf.current.toFixed(1);
+            
+            // Actualizar info panel
+            const anodeName = document.querySelector('#anode-material option:checked').textContent;
+            const bacteriaName = document.querySelector('#bacteria-type option:checked').textContent;
+            document.getElementById('current-anode').textContent = anodeName + ' + ' + bacteriaName.split(' ')[0];
+            
+            const cathodeName = document.querySelector('#cathode-material option:checked').textContent;
+            const catalystName = document.querySelector('#catalyst-type option:checked').textContent;
+            document.getElementById('current-cathode').textContent = cathodeName + 
+                (config.catalystType !== 'none' ? ' + ' + catalystName : '');
+            
+            document.getElementById('h2-production').textContent = perf.h2Production.toFixed(1) + ' mL/h';
+            document.getElementById('co2-emission').textContent = perf.co2Emission.toFixed(1) + ' mL/h';
+            
+            document.getElementById('active-bacteria').textContent = config.bacteriaCount;
+            document.getElementById('active-protons').textContent = protons.length;
+            document.getElementById('active-electrons').textContent = electrons.length;
+            
+            // Advertencias y recomendaciones
+            const statusDiv = document.getElementById('status-message');
+            statusDiv.innerHTML = '';
+            
+            if (perf.voltage < 0.2) {
+                statusDiv.innerHTML = '<div class="warning">⚠️ Voltaje muy bajo. Verifica la configuración.</div>';
+            } else if (perf.efficiency > 80) {
+                statusDiv.innerHTML = '<div class="success">✅ Configuración óptima. Excelente eficiencia!</div>';
+            }
+            
+            if (config.membraneType === 'none') {
+                statusDiv.innerHTML += '<div class="warning">⚠️ Sin membrana: Riesgo de cortocircuito</div>';
+            }
+            
+            if (Math.abs(config.temperature - 30) > 10) {
+                statusDiv.innerHTML += '<div class="warning">⚠️ Temperatura fuera del rango óptimo</div>';
+            }
+            
+            if (Math.abs(config.ph - 7.0) > 1.5) {
+                statusDiv.innerHTML += '<div class="warning">⚠️ pH fuera del rango óptimo</div>';
+            }
+        }
+        
+        function updateMaterialColors() {
+            // Actualizar color del electrodo del ánodo
+            const anodeElectrode = scene.getObjectByName('anodeElectrode');
+            if (anodeElectrode) {
+                const colorMap = {
+                    'graphite': 0x2c2c2c,
+                    'carbon-cloth': 0x1a1a1a,
+                    'activated-carbon': 0x000000,
+                    'carbon-felt': 0x3a3a3a,
+                    'tungsten': 0x5a5a6e,
+                    'molybdenum': 0x4a4a5a,
+                    'titanium': 0x8a8a9a
+                };
+                anodeElectrode.material.color.setHex(colorMap[config.anodeMaterial]);
+            }
+            
+            // Actualizar color del electrodo del cátodo
+            const cathodeElectrode = scene.getObjectByName('cathodeElectrode');
+            if (cathodeElectrode) {
+                const colorMap = {
+                    'stainless-steel': 0x757575,
+                    'carbon': 0x2c2c2c,
+                    'platinum': 0xc0c0c0,
+                    'zinc': 0x8a9ba8,
+                    'aluminum': 0xaaaaaa,
+                    'magnesium': 0x999999
+                };
+                cathodeElectrode.material.color.setHex(colorMap[config.cathodeMaterial]);
+            }
+            
+            // Actualizar color de la membrana
+            const membrane = scene.getObjectByName('membrane');
+            if (membrane) {
+                const colorMap = {
+                    'nafion': 0x10b981,
+                    'ultrex': 0x14b8a6,
+                    'ceramic': 0xd4a574,
+                    'agar': 0xfbbf24,
+                    'none': 0x666666
+                };
+                membrane.material.color.setHex(colorMap[config.membraneType]);
+                membrane.material.opacity = config.membraneType === 'none' ? 0.1 : 0.6;
+            }
+        }
+        
+        function setupEventListeners() {
+            // Material del ánodo
+            document.getElementById('anode-material').addEventListener('change', (e) => {
+                config.anodeMaterial = e.target.value;
+                const props = materialProps.anode[config.anodeMaterial];
+                document.getElementById('anode-info').textContent = 
+                    `Conductividad: ${(props.conductivity*100).toFixed(0)}% | Costo: ${props.cost} | Durabilidad: ${props.durability}`;
+                updateMaterialColors();
+                updateDisplay();
+            });
+            
+            // Cantidad de bacterias
+            document.getElementById('bacteria-slider').addEventListener('input', (e) => {
+                config.bacteriaCount = parseInt(e.target.value);
+                document.getElementById('bacteria-count').textContent = config.bacteriaCount;
+                updateBacteriaCount(config.bacteriaCount);
+                updateDisplay();
+            });
+            
+            // Tipo de bacteria
+            document.getElementById('bacteria-type').addEventListener('change', (e) => {
+                config.bacteriaType = e.target.value;
+                document.getElementById('bacteria-info').textContent = 
+                    materialProps.bacteria[config.bacteriaType].info;
+                updateDisplay();
+            });
+            
+            // Magnetita
+            document.getElementById('magnetite-slider').addEventListener('input', (e) => {
+                config.magnetiteLevel = parseInt(e.target.value);
+                document.getElementById('magnetite-value').textContent = config.magnetiteLevel + ' mg/L';
+                updateMagnetiteParticles(config.magnetiteLevel);
+                updateDisplay();
+            });
+            
+            // Sustrato
+            document.getElementById('substrate-type').addEventListener('change', (e) => {
+                config.substrateType = e.target.value;
+                updateDisplay();
+            });
+            
+            // Tipo de membrana
+            document.getElementById('membrane-type').addEventListener('change', (e) => {
+                config.membraneType = e.target.value;
+                document.getElementById('membrane-info').textContent = 
+                    materialProps.membrane[config.membraneType].info;
+                updateMaterialColors();
+                updateDisplay();
+            });
+            
+            // Grosor de membrana
+            document.getElementById('membrane-slider').addEventListener('input', (e) => {
+                config.membraneThickness = parseFloat(e.target.value);
+                document.getElementById('membrane-thickness').textContent = 
+                    config.membraneThickness.toFixed(2) + ' mm';
+                const membrane = scene.getObjectByName('membrane');
+                if (membrane) {
+                    membrane.scale.x = config.membraneThickness / 0.15;
+                }
+                updateDisplay();
+            });
+            
+            // Material del cátodo
+            document.getElementById('cathode-material').addEventListener('change', (e) => {
+                config.cathodeMaterial = e.target.value;
+                const props = materialProps.cathode[config.cathodeMaterial];
+                document.getElementById('cathode-info').textContent = 
+                    `Conductividad: ${(props.conductivity*100).toFixed(0)}% | Resistencia a corrosión: ${props.corrosion}`;
+                updateMaterialColors();
+                updateDisplay();
+            });
+            
+            // Catalizador
+            document.getElementById('catalyst-type').addEventListener('change', (e) => {
+                config.catalystType = e.target.value;
+                document.getElementById('catalyst-info').textContent = 
+                    materialProps.catalyst[config.catalystType].info;
+                updateDisplay();
+            });
+            
+            // Oxígeno
+            document.getElementById('oxygen-slider').addEventListener('input', (e) => {
+                config.oxygenLevel = parseFloat(e.target.value);
+                document.getElementById('oxygen-value').textContent = 
+                    config.oxygenLevel.toFixed(1) + ' mg/L';
+                updateDisplay();
+            });
+            
+            // Temperatura
+            document.getElementById('temp-slider').addEventListener('input', (e) => {
+                config.temperature = parseInt(e.target.value);
+                document.getElementById('temp-value').textContent = config.temperature + '°C';
+                updateDisplay();
+            });
+            
+            // pH
+            document.getElementById('ph-slider').addEventListener('input', (e) => {
+                config.ph = parseFloat(e.target.value);
+                document.getElementById('ph-value').textContent = config.ph.toFixed(1);
+                updateDisplay();
+            });
+            
+            // Resize
+            window.addEventListener('resize', () => {
+                const container = document.getElementById('canvas-container');
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
+        }
+        
+        function toggleRotation() {
+            rotation = !rotation;
+            document.getElementById('rotation-text').textContent = 
+                rotation ? '⏸ Pausar Rotación' : '▶️ Activar Rotación';
+        }
+        
+        function resetToDefaults() {
+            config = {
+                anodeMaterial: 'graphite',
+                bacteriaCount: 30,
+                bacteriaType: 'geobacter',
+                magnetiteLevel: 0,
+                substrateType: 'glucose',
+                membraneType: 'nafion',
+                membraneThickness: 0.15,
+                cathodeMaterial: 'stainless-steel',
+                catalystType: 'none',
+                oxygenLevel: 8,
+                temperature: 30,
+                ph: 7.0
+            };
+            
+            // Restaurar controles
+            document.getElementById('anode-material').value = config.anodeMaterial;
+            document.getElementById('bacteria-slider').value = config.bacteriaCount;
+            document.getElementById('bacteria-type').value = config.bacteriaType;
+            document.getElementById('magnetite-slider').value = config.magnetiteLevel;
+            document.getElementById('substrate-type').value = config.substrateType;
+            document.getElementById('membrane-type').value = config.membraneType;
+            document.getElementById('membrane-slider').value = config.membraneThickness;
+            document.getElementById('cathode-material').value = config.cathodeMaterial;
+            document.getElementById('catalyst-type').value = config.catalystType;
+            document.getElementById('oxygen-slider').value = config.oxygenLevel;
+            document.getElementById('temp-slider').value = config.temperature;
+            document.getElementById('ph-slider').value = config.ph;
+            
+            // Actualizar visualización
+            updateBacteriaCount(config.bacteriaCount);
+            updateMagnetiteParticles(config.magnetiteLevel);
+            updateMaterialColors();
+            
+            // Disparar eventos de cambio para actualizar textos
+            document.getElementById('bacteria-slider').dispatchEvent(new Event('input'));
+            document.getElementById('magnetite-slider').dispatchEvent(new Event('input'));
+            document.getElementById('membrane-slider').dispatchEvent(new Event('input'));
+            document.getElementById('oxygen-slider').dispatchEvent(new Event('input'));
+            document.getElementById('temp-slider').dispatchEvent(new Event('input'));
+            document.getElementById('ph-slider').dispatchEvent(new Event('input'));
+            
+            updateDisplay();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+            operationMinutes = (time / 6).toFixed(0);
+            document.getElementById('operation-time').textContent = operationMinutes + ' min';
+            
+            // Rotar escena
+            if (rotation) {
+                scene.rotation.y += 0.002;
+            }
+            
+            // Animar bacterias
+            bacteria.forEach((b, i) => {
+                b.position.y += Math.sin(time * 2 + i) * 0.005;
+                b.rotation.x += 0.02;
+                b.rotation.y += 0.02;
+            });
+            
+            // Animar magnetita
+            magnetiteParticles.forEach((p, i) => {
+                p.position.x += Math.sin(time + i) * 0.003;
+                p.position.y += Math.cos(time * 0.5 + i) * 0.003;
+                p.rotation.x += 0.03;
+                p.rotation.y += 0.03;
+            });
+            
+            // Animar protones
+            protons.forEach(p => {
+                p.position.x += p.userData.velocity * (1 + config.magnetiteLevel / 200);
+                if (p.position.x > 2.5) p.position.x = -2.5;
+            });
+            
+            // Animar electrones
+            electrons.forEach(e => {
+                e.userData.t += 0.005 * (1 + config.magnetiteLevel / 400);
+                if (e.userData.t > 1) e.userData.t = 0;
+                const point = cableCurve.getPoint(e.userData.t);
+                e.position.copy(point);
+            });
+            
+            // Animar CO2
+            co2Molecules.forEach(co2 => {
+                co2.position.y += co2.userData.velocity;
+                if (co2.position.y > 5) co2.position.y = 2;
+            });
+            
+            // Animar H2
+            h2Molecules.forEach(h2 => {
+                h2.position.y += h2.userData.velocity;
+                h2.rotation.z += 0.02;
+                if (h2.position.y > 5) h2.position.y = 2;
+            });
+            
+            updateDisplay();
+            renderer.render(scene, camera);
+        }
+        
+        // Iniciar
+        window.onload = init;
+    </script>
+</body>
+</html>
