@@ -13,7 +13,7 @@
       --panel-width: 360px;
       font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
     }
-    html,body{height:100%;margin:0;background:var(--bg);color:#fff}
+    html,body{height:100%;margin:0;background:var(--bg);color:#fff;overflow:hidden}
     .app {
       display: flex;
       height: 100vh;
@@ -36,6 +36,7 @@
       display:flex;
       flex-direction:column;
       height: calc(100% - 120px);
+      position: relative;
     }
     canvas { width:100%; height:100%; border-radius:8px; display:block; background:transparent }
     .controls {
@@ -44,8 +45,9 @@
       align-items:center;
       justify-content:space-between;
       margin-top:8px;
+      flex-wrap: wrap;
     }
-    .buttons { display:flex; gap:8px; align-items:center; }
+    .buttons { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
     button {
       background: var(--card);
       color: #fff;
@@ -54,7 +56,9 @@
       border-radius:8px;
       cursor:pointer;
       font-weight:600;
+      transition: all 0.2s;
     }
+    button:hover { background: #1a2550; transform: translateY(-1px); }
     button.small { padding:6px 8px; font-size:14px }
     .slider {
       display:flex; align-items:center; gap:8px;
@@ -75,7 +79,8 @@
     .materials { font-size:13px; color:#dfe9ff; margin-top:8px }
     ul { padding-left:18px; margin:6px 0 12px 0 }
     .steps-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px }
-    .chip { background:#0b1a2b; padding:6px 8px; border-radius:8px; cursor:pointer; font-size:13px; border:1px solid rgba(255,255,255,0.03)}
+    .chip { background:#0b1a2b; padding:6px 8px; border-radius:8px; cursor:pointer; font-size:13px; border:1px solid rgba(255,255,255,0.03); transition: all 0.2s;}
+    .chip:hover { border:1px solid rgba(78,205,196,0.3); }
     .chip.active { background:linear-gradient(90deg,#123040,#1b6b63); border:1px solid rgba(78,205,196,0.15) }
     footer { font-size:12px; color:var(--muted); margin-top:12px; }
     @media (max-width:980px){
@@ -86,31 +91,25 @@
   </style>
 </head>
 <body>
-    <link rel="stylesheet" href="global.css">
-    <script src="drag-button.js" defer></script>
-
-    <button class="return-button" onclick="window.location.href='index.html'">
-    Regresar
-    </button>
   <div class="app">
     <div class="left">
       <div class="canvas-wrap">
-        <canvas id="canvas" width="1200" height="720"></canvas>
+        <canvas id="canvas"></canvas>
       </div>
 
       <div class="controls">
         <div class="buttons">
-          <button id="prevBtn" class="small">◀ Prev</button>
-          <button id="playBtn">▶ Play</button>
-          <button id="pauseBtn" style="display:none">❚❚ Pause</button>
-          <button id="nextBtn" class="small">Next ▶</button>
-          <button id="resetRot" class="small">⤾ Reset rot</button>
+          <button id="prevBtn" class="small">◀ Anterior</button>
+          <button id="playBtn">▶ Reproducir</button>
+          <button id="pauseBtn" style="display:none">❚❚ Pausar</button>
+          <button id="nextBtn" class="small">Siguiente ▶</button>
+          <button id="resetRot" class="small">⤾ Reset 3D</button>
         </div>
 
         <div class="slider">
-          <label style="font-size:13px;color:var(--muted)">Vel rot</label>
+          <label style="font-size:13px;color:var(--muted)">Velocidad</label>
           <input id="speed" type="range" min="0" max="6" step="0.2" value="1" />
-          <label id="speedLabel" style="font-size:13px;color:var(--muted)">1.0</label>
+          <label id="speedLabel" style="font-size:13px;color:var(--muted)">1.0x</label>
         </div>
       </div>
     </div>
@@ -123,21 +122,20 @@
       <div id="stepDesc">Preparar medio anaeróbico con nutrientes para bacterias electrogénicas</div>
 
       <div class="materials">
-        <strong>Materiales / Procedimiento (resumen):</strong>
+        <strong>Materiales / Procedimiento:</strong>
         <ul id="materialsList"></ul>
       </div>
 
       <div style="margin-top:6px">
-        <strong>Pasos:</strong>
+        <strong>Navegación:</strong>
         <div class="steps-list" id="stepsList"></div>
       </div>
 
-      <footer>Consejo: mantén la atmósfera anaerobia y controla temperatura/pH para mejores resultados.</footer>
+      <footer>💡 Consejo: mantén la atmósfera anaerobia y controla temperatura/pH para mejores resultados.</footer>
     </aside>
   </div>
 
 <script>
-/* Datos de pasos (contenido sacado y adaptado del código original) */
 const steps = [
   {
     title: "Paso 1: Preparación del Medio de Cultivo",
@@ -283,18 +281,20 @@ const steps = [
   }
 ];
 
-/* APP STATE */
 let currentStep = 0;
 let rotation = 0;
 let isPlaying = false;
 let speed = 1.0;
 let raf = null;
+let mouseDown = false;
+let lastMouseX = 0;
+let lastMouseY = 0;
+let rotationX = 0.3;
+let rotationY = 0;
 
-/* Canvas & ctx */
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-/* Resize canvas to device pixel ratio for crispness */
 function resizeCanvas() {
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
@@ -305,7 +305,29 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-/* UI elements */
+// Mouse interaction for 3D rotation
+canvas.addEventListener('mousedown', (e) => {
+  mouseDown = true;
+  lastMouseX = e.clientX;
+  lastMouseY = e.clientY;
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (mouseDown) {
+    const dx = e.clientX - lastMouseX;
+    const dy = e.clientY - lastMouseY;
+    rotationY += dx * 0.01;
+    rotationX += dy * 0.01;
+    rotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotationX));
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+    if (!isPlaying) render();
+  }
+});
+
+canvas.addEventListener('mouseup', () => { mouseDown = false; });
+canvas.addEventListener('mouseleave', () => { mouseDown = false; });
+
 const stepTitleEl = document.getElementById('stepTitle');
 const stepDescEl = document.getElementById('stepDesc');
 const materialsListEl = document.getElementById('materialsList');
@@ -318,13 +340,12 @@ const resetRot = document.getElementById('resetRot');
 const speedInput = document.getElementById('speed');
 const speedLabel = document.getElementById('speedLabel');
 
-/* Populate chips */
 function renderChips() {
   stepsListEl.innerHTML = '';
   steps.forEach((s, i) => {
     const chip = document.createElement('div');
     chip.className = 'chip' + (i === currentStep ? ' active' : '');
-    chip.textContent = (i+1) + '. ' + s.title.replace('Paso ' + (i+1) + ': ', '');
+    chip.textContent = (i+1) + '. ' + s.title.replace(/Paso \d+: /, '');
     chip.onclick = () => {
       currentStep = i;
       updatePanel();
@@ -333,7 +354,6 @@ function renderChips() {
   });
 }
 
-/* Update side panel */
 function updatePanel() {
   const s = steps[currentStep];
   stepTitleEl.textContent = s.title;
@@ -347,429 +367,1169 @@ function updatePanel() {
   renderChips();
 }
 
-/* Buttons */
-playBtn.onclick = () => { isPlaying = true; playBtn.style.display='none'; pauseBtn.style.display='inline-block'; startLoop(); };
-pauseBtn.onclick = () => { isPlaying = false; pauseBtn.style.display='none'; playBtn.style.display='inline-block'; stopLoop(); };
-prevBtn.onclick = () => { currentStep = (currentStep - 1 + steps.length) % steps.length; updatePanel(); render(); };
-nextBtn.onclick = () => { currentStep = (currentStep + 1) % steps.length; updatePanel(); render(); };
-resetRot.onclick = () => { rotation = 0; render(); };
+playBtn.onclick = () => { 
+  isPlaying = true; 
+  playBtn.style.display='none'; 
+  pauseBtn.style.display='inline-block'; 
+  startLoop(); 
+};
+
+pauseBtn.onclick = () => { 
+  isPlaying = false; 
+  pauseBtn.style.display='none'; 
+  playBtn.style.display='inline-block'; 
+  stopLoop(); 
+};
+
+prevBtn.onclick = () => { 
+  currentStep = (currentStep - 1 + steps.length) % steps.length; 
+  updatePanel(); 
+  render(); 
+};
+
+nextBtn.onclick = () => { 
+  currentStep = (currentStep + 1) % steps.length; 
+  updatePanel(); 
+  render(); 
+};
+
+resetRot.onclick = () => { 
+  rotation = 0; 
+  rotationX = 0.3; 
+  rotationY = 0; 
+  render(); 
+};
 
 speedInput.oninput = () => {
   speed = parseFloat(speedInput.value);
-  speedLabel.textContent = speed.toFixed(1);
+  speedLabel.textContent = speed.toFixed(1) + 'x';
 };
 
-/* Rendering helpers (adaptados del componente React original) */
-function clear() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+// 3D projection helper
+function project3D(x, y, z, cx, cy) {
+  const cosX = Math.cos(rotationX);
+  const sinX = Math.sin(rotationX);
+  const cosY = Math.cos(rotationY);
+  const sinY = Math.sin(rotationY);
+  
+  let y1 = y * cosX - z * sinX;
+  let z1 = y * sinX + z * cosX;
+  let x1 = x * cosY - z1 * sinY;
+  let z2 = x * sinY + z1 * cosY;
+  
+  const scale = 400 / (400 + z2);
+  return {
+    x: cx + x1 * scale,
+    y: cy + y1 * scale,
+    scale: scale
+  };
 }
 
-function drawFlask(ctx, cx, cy, rot, fill, opacity) {
-  // simple stylized Erlenmeyer flask
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(rot*0.1);
-  ctx.globalAlpha = opacity;
-  ctx.fillStyle = fill;
+function clear() {
+  const rect = canvas.getBoundingClientRect();
+  ctx.clearRect(0, 0, rect.width, rect.height);
+  
+  // Gradient background
+  const grad = ctx.createRadialGradient(rect.width/2, rect.height/2, 0, rect.width/2, rect.height/2, rect.width/2);
+  grad.addColorStop(0, '#0a0e27');
+  grad.addColorStop(1, '#05061a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, rect.width, rect.height);
+}
+
+// IMPROVED 3D MODELS
+
+function drawMediumPreparation(cx, cy, t) {
+  // 3D Erlenmeyer flask with liquid and particles
+  const points = [];
+  const resolution = 40;
+  
+  for (let i = 0; i <= resolution; i++) {
+    const angle = (i / resolution) * Math.PI * 2;
+    const height = -100 + (i / resolution) * 180;
+    let radius;
+    
+    if (height < -40) {
+      radius = 20 + (height + 100) * 0.3;
+    } else {
+      radius = 40 + (height + 40) * 0.8;
+    }
+    
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    const y = height;
+    points.push({x, y, z, angle, height});
+  }
+  
+  // Draw flask body
+  ctx.strokeStyle = 'rgba(100, 150, 255, 0.3)';
+  ctx.lineWidth = 2;
+  
+  for (let layer = 0; layer < 20; layer++) {
+    const y = -100 + layer * 9;
+    ctx.beginPath();
+    let first = true;
+    
+    for (let i = 0; i <= 40; i++) {
+      const angle = (i / 40) * Math.PI * 2;
+      let radius;
+      if (y < -40) {
+        radius = 20 + (y + 100) * 0.3;
+      } else {
+        radius = 40 + (y + 40) * 0.8;
+      }
+      
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      const p = project3D(x, y, z, cx, cy);
+      
+      if (first) {
+        ctx.moveTo(p.x, p.y);
+        first = false;
+      } else {
+        ctx.lineTo(p.x, p.y);
+      }
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+  
+  // Liquid inside
+  ctx.fillStyle = 'rgba(100, 180, 255, 0.3)';
   ctx.beginPath();
-  ctx.moveTo(-60,80);
-  ctx.lineTo(-35, -40);
-  ctx.quadraticCurveTo(-5, -60, 0, -60);
-  ctx.quadraticCurveTo(5, -60, 35, -40);
-  ctx.lineTo(60,80);
+  let first = true;
+  for (let i = 0; i <= 40; i++) {
+    const angle = (i / 40) * Math.PI * 2;
+    const y = 60;
+    const radius = 40 + (y + 40) * 0.8;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    const p = project3D(x, y, z, cx, cy);
+    if (first) {
+      ctx.moveTo(p.x, p.y);
+      first = false;
+    } else {
+      ctx.lineTo(p.x, p.y);
+    }
+  }
   ctx.closePath();
   ctx.fill();
-  ctx.globalAlpha = 1;
-  ctx.strokeStyle = '#fff2';
-  ctx.lineWidth = 1.2;
-  ctx.stroke();
-  ctx.restore();
-}
-
-/* Individual draw functions (ported and simplified for canvas-only app) */
-
-function drawMediumPreparation(cx, cy, rot) {
-  drawFlask(ctx, cx, cy, rot, '#4a90e2', 0.8);
-  // Nutrients floating
-  for (let i = 0; i < 20; i++) {
-    const angle = (i * 18 + rotation) * Math.PI / 180;
-    const radius = 60 + Math.sin(rotation * 0.1 + i) * 10;
-    const x = cx + Math.cos(angle) * radius * Math.cos(rot);
-    const y = cy + Math.sin(angle) * radius - 50;
-    ctx.fillStyle = i % 3 === 0 ? '#ffd700' : i % 3 === 1 ? '#90ee90' : '#ff6b6b';
+  
+  // Floating nutrients (3D particles)
+  for (let i = 0; i < 30; i++) {
+    const angle = t * 0.02 + i * 0.5;
+    const radius = 30 + Math.sin(t * 0.03 + i) * 15;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    const y = -20 + Math.sin(t * 0.05 + i) * 40;
+    
+    const p = project3D(x, y, z, cx, cy);
+    const colors = ['#ffd700', '#90ee90', '#ff6b6b'];
+    ctx.fillStyle = colors[i % 3];
+    ctx.globalAlpha = p.scale * 0.8;
     ctx.beginPath();
-    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, 4 * p.scale, 0, Math.PI * 2);
     ctx.fill();
+    ctx.globalAlpha = 1;
   }
 }
 
-function drawSterilization(cx, cy, rot) {
-  ctx.fillStyle = '#666';
-  ctx.fillRect(cx - 80, cy - 60, 160, 120);
-  for (let i = 0; i < 15; i++) {
-    const x = cx - 60 + (i % 5) * 30;
-    const y = cy - 80 + Math.sin(rotation * 0.1 + i) * 20;
-    ctx.fillStyle = `rgba(200, 200, 255, ${0.3 - i * 0.02})`;
-    ctx.beginPath();
-    ctx.arc(x, y, 8 + i*0.3, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.fillStyle = '#ff4444';
-  ctx.font = 'bold 20px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('121°C', cx, cy);
-}
-
-function drawMagnetiteSynthesis(cx, cy, rot) {
-  ctx.strokeStyle = '#888';
+function drawSterilization(cx, cy, t) {
+  // 3D Autoclave chamber with steam
+  const depth = 80;
+  const width = 120;
+  const height = 100;
+  
+  // Back face
+  const corners = [
+    [-width, -height, -depth],
+    [width, -height, -depth],
+    [width, height, -depth],
+    [-width, height, -depth],
+    [-width, -height, depth],
+    [width, -height, depth],
+    [width, height, depth],
+    [-width, height, depth]
+  ];
+  
+  const projected = corners.map(([x, y, z]) => project3D(x, y, z, cx, cy));
+  
+  // Draw chamber
+  ctx.strokeStyle = '#555';
+  ctx.fillStyle = '#1a1a2e';
   ctx.lineWidth = 3;
+  
+  // Back face
   ctx.beginPath();
-  ctx.moveTo(cx - 70, cy - 80);
-  ctx.lineTo(cx - 60, cy + 80);
-  ctx.lineTo(cx + 60, cy + 80);
-  ctx.lineTo(cx + 70, cy - 80);
+  ctx.moveTo(projected[0].x, projected[0].y);
+  ctx.lineTo(projected[1].x, projected[1].y);
+  ctx.lineTo(projected[2].x, projected[2].y);
+  ctx.lineTo(projected[3].x, projected[3].y);
+  ctx.closePath();
+  ctx.fill();
   ctx.stroke();
-  for (let i = 0; i < 100; i++) {
+  
+  // Front face
+  ctx.fillStyle = '#2a2a3e';
+  ctx.beginPath();
+  ctx.moveTo(projected[4].x, projected[4].y);
+  ctx.lineTo(projected[5].x, projected[5].y);
+  ctx.lineTo(projected[6].x, projected[6].y);
+  ctx.lineTo(projected[7].x, projected[7].y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  
+  // Steam particles
+  for (let i = 0; i < 40; i++) {
+    const angle = (i * 0.3 + t * 0.1) * Math.PI;
+    const radius = (i % 4) * 20 + Math.sin(t * 0.1 + i) * 10;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    const y = -60 + (i % 8) * 15 + Math.sin(t * 0.05 + i) * 10;
+    
+    const p = project3D(x, y, z, cx, cy);
+    ctx.fillStyle = `rgba(200, 220, 255, ${0.4 * p.scale})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6 * p.scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  // Temperature display
+  ctx.fillStyle = '#ff4444';
+  ctx.font = 'bold 24px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('121°C', cx, cy + 130);
+  ctx.fillStyle = '#fff';
+  ctx.font = '14px Arial';
+  ctx.fillText('20 min', cx, cy + 150);
+}
+
+function drawMagnetiteSynthesis(cx, cy, t) {
+  // 3D Beaker with magnetic field lines
+  const beakerRadius = 70;
+  const beakerHeight = 140;
+  
+  // Draw beaker
+  for (let layer = 0; layer < 25; layer++) {
+    const y = -beakerHeight/2 + layer * (beakerHeight / 24);
+    const alpha = layer < 15 ? 0.15 : 0.3;
+    ctx.strokeStyle = `rgba(150, 150, 150, ${alpha})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    
+    for (let i = 0; i <= 40; i++) {
+      const angle = (i / 40) * Math.PI * 2;
+      const x = Math.cos(angle) * beakerRadius;
+      const z = Math.sin(angle) * beakerRadius;
+      const p = project3D(x, y, z, cx, cy);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+  
+  // Magnetite nanoparticles (3D)
+  for (let i = 0; i < 120; i++) {
     const angle = Math.random() * Math.PI * 2;
     const radius = Math.random() * 50;
-    const x = cx + Math.cos(angle) * radius;
-    const y = cy + Math.sin(angle) * radius + Math.sin(rotation * 0.05 + i) * 5;
-    ctx.fillStyle = '#1a1a1a';
+    const height = Math.random() * 100 - 50;
+    
+    const x = Math.cos(angle + t * 0.02) * radius;
+    const z = Math.sin(angle + t * 0.02) * radius;
+    const y = height + Math.sin(t * 0.05 + i) * 8;
+    
+    const p = project3D(x, y, z, cx, cy);
+    ctx.fillStyle = `rgba(26, 26, 26, ${0.8 * p.scale})`;
     ctx.beginPath();
-    ctx.arc(x, y, 2, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, 2.5 * p.scale, 0, Math.PI * 2);
     ctx.fill();
   }
-  ctx.strokeStyle = '#ff00ff';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < 8; i++) {
-    const angle = (i * 45 + rotation * 2) * Math.PI / 180;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 70 + i * 5, angle, angle + Math.PI / 4);
-    ctx.stroke();
-  }
-}
-
-function drawFunctionalization(cx, cy, rot) {
-  for (let i = 0; i < 30; i++) {
-    const angle = (i * 12 + rotation) * Math.PI / 180;
-    const radius = 40;
-    const x = cx + Math.cos(angle) * radius;
-    const y = cy + Math.sin(angle) * radius;
-    ctx.fillStyle = '#1a1a1a';
-    ctx.beginPath();
-    ctx.arc(x, y, 8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#4ecdc4';
+  
+  // Magnetic field lines
+  for (let i = 0; i < 12; i++) {
+    const angle = (i * 30 + t * 2) * Math.PI / 180;
+    ctx.strokeStyle = `rgba(255, 0, 255, ${0.4 + Math.sin(t * 0.1 + i) * 0.2})`;
     ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(x, y, 12, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-  ctx.fillStyle = '#4ecdc4';
-  ctx.font = '14px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('Recubrimiento', cx, cy + 100);
-  ctx.fillText('Estabilizante', cx, cy + 120);
-}
-
-function drawBacteriaSource(cx, cy, rot) {
-  for (let d = 0; d < 4; d++) {
-    const dx = (d % 2) * 120 - 60;
-    const dy = Math.floor(d / 2) * 120 - 60;
-    ctx.strokeStyle = '#888';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(cx + dx, cy + dy, 40, 0, Math.PI * 2);
-    ctx.stroke();
-    const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f39c12'];
-    for (let i = 0; i < 15; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 25;
-      const x = cx + dx + Math.cos(angle) * radius;
-      const y = cy + dy + Math.sin(angle) * radius;
-      ctx.fillStyle = colors[d];
+    
+    for (let r = 0; r < 3; r++) {
       ctx.beginPath();
-      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      for (let j = 0; j <= 20; j++) {
+        const t2 = j / 20;
+        const radius = 80 + r * 25;
+        const x = Math.cos(angle + t2 * Math.PI) * radius * t2;
+        const z = Math.sin(angle + t2 * Math.PI) * radius * t2;
+        const y = (t2 - 0.5) * 120;
+        const p = project3D(x, y, z, cx, cy);
+        if (j === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+    }
+  }
+}
+
+function drawFunctionalization(cx, cy, t) {
+  // Nanoparticles with coating shells
+  const particles = 25;
+  
+  for (let i = 0; i < particles; i++) {
+    const angle = (i / particles) * Math.PI * 2;
+    const radius = 60 + Math.sin(t * 0.03 + i) * 15;
+    const height = Math.cos(t * 0.04 + i * 0.5) * 30;
+    
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    const y = height;
+    
+    const p = project3D(x, y, z, cx, cy);
+    
+    // Core (magnetite)
+    ctx.fillStyle = `rgba(26, 26, 26, ${0.9 * p.scale})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 8 * p.scale, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Coating layers
+    for (let layer = 1; layer <= 3; layer++) {
+      const r = 8 + layer * 4;
+      const alpha = 0.3 - layer * 0.08;
+      ctx.strokeStyle = `rgba(78, 205, 196, ${alpha * p.scale})`;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r * p.scale, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    
+    // Coating molecules
+    for (let m = 0; m < 8; m++) {
+      const mAngle = (m / 8) * Math.PI * 2 + t * 0.05;
+      const mRadius = 14;
+      const mx = x + Math.cos(mAngle) * mRadius;
+      const mz = z + Math.sin(mAngle) * mRadius;
+      const mp = project3D(mx, y, mz, cx, cy);
+      ctx.fillStyle = `rgba(78, 205, 196, ${0.6 * mp.scale})`;
+      ctx.beginPath();
+      ctx.arc(mp.x, mp.y, 2 * mp.scale, 0, Math.PI * 2);
       ctx.fill();
     }
   }
-  ctx.fillStyle = '#fff';
-  ctx.font = '12px Arial';
+  
+  ctx.fillStyle = '#4ecdc4';
+  ctx.font = '16px Arial';
   ctx.textAlign = 'center';
-  const labels = ['Geobacter', 'Shewanella', 'Pseudomonas', 'Clostridium'];
-  labels.forEach((label, i) => {
-    const dx = (i % 2) * 120 - 60;
-    const dy = Math.floor(i / 2) * 120 - 60;
-    ctx.fillText(label, cx + dx, cy + dy + 55);
+  ctx.fillText('Recubrimiento biocompatible', cx, cy + 140);
+}
+
+function drawBacteriaSource(cx, cy, t) {
+  // 4 petri dishes with different bacteria strains
+  const dishes = [
+    {x: -80, z: -80, color: '#e74c3c', label: 'Geobacter'},
+    {x: 80, z: -80, color: '#3498db', label: 'Shewanella'},
+    {x: -80, z: 80, color: '#2ecc71', label: 'Pseudomonas'},
+    {x: 80, z: 80, color: '#f39c12', label: 'Clostridium'}
+  ];
+  
+  dishes.forEach((dish, idx) => {
+    // Petri dish
+    const dishRadius = 50;
+    for (let layer = 0; layer < 8; layer++) {
+      const y = -5 + layer * 2;
+      ctx.strokeStyle = `rgba(150, 150, 150, ${0.2 + layer * 0.05})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      
+      for (let i = 0; i <= 30; i++) {
+        const angle = (i / 30) * Math.PI * 2;
+        const x = dish.x + Math.cos(angle) * dishRadius;
+        const z = dish.z + Math.sin(angle) * dishRadius;
+        const p = project3D(x, y, z, cx, cy);
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    }
+    
+    // Bacterial colonies
+    for (let i = 0; i < 25; i++) {
+      const angle = (i + t * 0.01) * 0.5;
+      const radius = Math.random() * 35;
+      const x = dish.x + Math.cos(angle) * radius;
+      const z = dish.z + Math.sin(angle) * radius;
+      const y = 5;
+      
+      const p = project3D(x, y, z, cx, cy);
+      const size = (3 + Math.sin(t * 0.1 + i) * 1) * p.scale;
+      ctx.fillStyle = dish.color;
+      ctx.globalAlpha = 0.7 * p.scale;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    
+    // Label
+    const labelP = project3D(dish.x, 20, dish.z, cx, cy);
+    ctx.fillStyle = '#fff';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(dish.label, labelP.x, labelP.y);
   });
 }
 
-function drawInitialCulture(cx, cy, rot) {
-  drawFlask(ctx, cx, cy, rot, '#3498db', 0.9);
-  for (let i = 0; i < 60; i++) {
-    const angle = (i * 6 + rotation * 2) * Math.PI / 180;
-    const radius = 30 + Math.sin(rotation * 0.05 + i) * 20;
-    const x = cx + Math.cos(angle) * radius * Math.cos(rot * 0.5);
-    const y = cy + Math.sin(angle) * radius - 30;
-    const pulse = 1 + Math.sin(rotation * 0.1 + i) * 0.3;
-    ctx.fillStyle = '#e74c3c';
+function drawInitialCulture(cx, cy, t) {
+  // 3D Flask with bacterial culture
+  const flaskPoints = [];
+  for (let i = 0; i <= 40; i++) {
+    const angle = (i / 40) * Math.PI * 2;
+    for (let h = 0; h < 20; h++) {
+      const y = -100 + h * 9;
+      let radius;
+      if (y < -40) {
+        radius = 25 + (y + 100) * 0.25;
+      } else {
+        radius = 40 + (y + 40) * 0.7;
+      }
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      flaskPoints.push({x, y, z});
+    }
+  }
+  
+  // Draw flask outline
+  ctx.strokeStyle = 'rgba(100, 150, 200, 0.4)';
+  ctx.lineWidth = 2;
+  for (let h = 0; h < 20; h++) {
     ctx.beginPath();
-    ctx.arc(x, y, 3 * pulse, 0, Math.PI * 2);
+    const y = -100 + h * 9;
+    let radius;
+    if (y < -40) {
+      radius = 25 + (y + 100) * 0.25;
+    } else {
+      radius = 40 + (y + 40) * 0.7;
+    }
+    
+    for (let i = 0; i <= 40; i++) {
+      const angle = (i / 40) * Math.PI * 2;
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      const p = project3D(x, y, z, cx, cy);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+  
+  // Liquid medium
+  ctx.fillStyle = 'rgba(52, 152, 219, 0.3)';
+  ctx.beginPath();
+  const liquidY = 50;
+  const liquidRadius = 40 + (liquidY + 40) * 0.7;
+  for (let i = 0; i <= 40; i++) {
+    const angle = (i / 40) * Math.PI * 2;
+    const x = Math.cos(angle) * liquidRadius;
+    const z = Math.sin(angle) * liquidRadius;
+    const p = project3D(x, liquidY, z, cx, cy);
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  
+  // Growing bacteria (3D spiral pattern)
+  for (let i = 0; i < 80; i++) {
+    const angle = (i * 0.3 + t * 0.03) * Math.PI;
+    const radius = 25 + Math.sin(t * 0.05 + i * 0.1) * 18;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    const y = -30 + Math.sin(i * 0.2) * 40;
+    
+    const p = project3D(x, y, z, cx, cy);
+    const pulse = 1 + Math.sin(t * 0.15 + i) * 0.3;
+    ctx.fillStyle = `rgba(231, 76, 60, ${0.8 * p.scale})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3 * pulse * p.scale, 0, Math.PI * 2);
     ctx.fill();
   }
+  
+  // Shaker platform indicator
+  const shakerY = Math.sin(t * 0.1) * 3;
   ctx.strokeStyle = '#666';
   ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.arc(cx, cy + 120, 100, 0, Math.PI);
+  const p1 = project3D(-100, 120 + shakerY, 0, cx, cy);
+  const p2 = project3D(100, 120 + shakerY, 0, cx, cy);
+  ctx.moveTo(p1.x, p1.y);
+  ctx.lineTo(p2.x, p2.y);
   ctx.stroke();
+  
   ctx.fillStyle = '#fff';
   ctx.font = '14px Arial';
   ctx.textAlign = 'center';
-  ctx.fillText('30°C | 150 rpm', cx, cy + 150);
+  ctx.fillText('30°C | 150 rpm', cx, cy + 160);
 }
 
-function drawMagnetiteIncorporation(cx, cy, rot) {
-  drawFlask(ctx, cx, cy, rot, '#2c3e50', 0.95);
-  for (let i = 0; i < 40; i++) {
-    const angle = (i * 9 + rotation) * Math.PI / 180;
-    const radius = 40 + Math.sin(rotation * 0.05 + i) * 15;
-    const x = cx + Math.cos(angle) * radius * Math.cos(rot * 0.3);
-    const y = cy + Math.sin(angle) * radius - 20;
-    ctx.fillStyle = '#e74c3c';
+function drawMagnetiteIncorporation(cx, cy, t) {
+  // Flask with bacteria and magnetite mixing
+  for (let h = 0; h < 20; h++) {
+    const y = -100 + h * 9;
+    let radius;
+    if (y < -40) {
+      radius = 25 + (y + 100) * 0.25;
+    } else {
+      radius = 40 + (y + 40) * 0.7;
+    }
+    
+    ctx.strokeStyle = 'rgba(80, 80, 120, 0.3)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.arc(x, y, 4, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  for (let i = 0; i < 80; i++) {
-    const angle = (i * 4.5 - rotation * 1.5) * Math.PI / 180;
-    const radius = 35 + Math.cos(rotation * 0.07 + i) * 18;
-    const x = cx + Math.cos(angle) * radius * Math.cos(rot * 0.3);
-    const y = cy + Math.sin(angle) * radius - 20;
-    ctx.fillStyle = '#8e44ad';
-    ctx.beginPath();
-    ctx.arc(x, y, 2, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.strokeStyle = 'rgba(142, 68, 173, 0.3)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < 10; i++) {
-    const angle1 = (i * 36 + rotation) * Math.PI / 180;
-    const angle2 = (i * 36 - rotation * 1.5) * Math.PI / 180;
-    const r1 = 40;
-    const r2 = 35;
-    ctx.beginPath();
-    ctx.moveTo(cx + Math.cos(angle1) * r1, cy + Math.sin(angle1) * r1 - 20);
-    ctx.lineTo(cx + Math.cos(angle2) * r2, cy + Math.sin(angle2) * r2 - 20);
+    for (let i = 0; i <= 40; i++) {
+      const angle = (i / 40) * Math.PI * 2;
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      const p = project3D(x, y, z, cx, cy);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.closePath();
     ctx.stroke();
   }
+  
+  // Bacteria
+  for (let i = 0; i < 50; i++) {
+    const angle = (i * 0.4 + t * 0.02) * Math.PI;
+    const radius = 30 + Math.sin(t * 0.04 + i * 0.15) * 20;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    const y = -20 + Math.cos(i * 0.3 + t * 0.03) * 35;
+    
+    const p = project3D(x, y, z, cx, cy);
+    ctx.fillStyle = `rgba(231, 76, 60, ${0.7 * p.scale})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4 * p.scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  // Magnetite nanoparticles
+  for (let i = 0; i < 100; i++) {
+    const angle = (i * 0.25 - t * 0.025) * Math.PI;
+    const radius = 28 + Math.cos(t * 0.05 + i * 0.1) * 22;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    const y = -25 + Math.sin(i * 0.2 + t * 0.04) * 40;
+    
+    const p = project3D(x, y, z, cx, cy);
+    ctx.fillStyle = `rgba(142, 68, 173, ${0.8 * p.scale})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2 * p.scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  // Connection lines (bacteria-magnetite interaction)
+  for (let i = 0; i < 15; i++) {
+    const angle1 = (i * 0.8 + t * 0.02) * Math.PI;
+    const angle2 = (i * 0.5 - t * 0.025) * Math.PI;
+    const r1 = 35;
+    const r2 = 32;
+    const y1 = -15 + Math.sin(i * 0.5) * 25;
+    const y2 = -20 + Math.cos(i * 0.4) * 30;
+    
+    const p1 = project3D(Math.cos(angle1) * r1, y1, Math.sin(angle1) * r1, cx, cy);
+    const p2 = project3D(Math.cos(angle2) * r2, y2, Math.sin(angle2) * r2, cx, cy);
+    
+    ctx.strokeStyle = `rgba(142, 68, 173, ${0.15 * Math.min(p1.scale, p2.scale)})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+  }
+  
+  ctx.fillStyle = '#fff';
+  ctx.font = '14px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('Incorporación Fe₃O₄', cx, cy + 140);
+  ctx.fillText('12-24 horas', cx, cy + 160);
 }
 
-function drawVerification(cx, cy, rot) {
+function drawVerification(cx, cy, t) {
+  // Microscope view - circular field
+  const viewRadius = 100;
+  
+  // Microscope circle
   ctx.strokeStyle = '#888';
   ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.arc(cx, cy, 100, 0, Math.PI * 2);
+  ctx.arc(cx, cy, viewRadius, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.fillStyle = '#1a1a2e';
+  
+  ctx.fillStyle = '#0a0a1a';
   ctx.beginPath();
-  ctx.arc(cx, cy, 96, 0, Math.PI * 2);
+  ctx.arc(cx, cy, viewRadius - 4, 0, Math.PI * 2);
   ctx.fill();
-  for (let i = 0; i < 5; i++) {
-    const angle = (i * 72 + rotation * 0.5) * Math.PI / 180;
-    const radius = 50;
-    const x = cx + Math.cos(angle) * radius;
-    const y = cy + Math.sin(angle) * radius;
-    ctx.fillStyle = 'rgba(231, 76, 60, 0.6)';
+  
+  // 3D bacteria with magnetite inside
+  for (let i = 0; i < 8; i++) {
+    const angle = (i * 0.8 + t * 0.01) * Math.PI;
+    const radius = 50 + Math.sin(t * 0.03 + i) * 15;
+    const depth = Math.sin(t * 0.04 + i * 0.5) * 30;
+    
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    const y = depth;
+    
+    const p = project3D(x, y, z, cx, cy);
+    
+    // Bacteria body (ellipse in 3D)
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(angle);
+    ctx.scale(p.scale, p.scale);
+    
+    ctx.fillStyle = 'rgba(231, 76, 60, 0.7)';
     ctx.beginPath();
-    ctx.ellipse(x, y, 20, 12, angle, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 22, 10, 0, 0, Math.PI * 2);
     ctx.fill();
-    for (let j = 0; j < 3; j++) {
+    
+    ctx.strokeStyle = 'rgba(200, 60, 40, 0.9)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    
+    // Magnetite particles inside bacteria
+    for (let j = 0; j < 4; j++) {
+      const mx = -12 + j * 8;
       ctx.fillStyle = '#8e44ad';
       ctx.beginPath();
-      ctx.arc(x + (j - 1) * 5, y, 2, 0, Math.PI * 2);
+      ctx.arc(mx, 0, 2.5, 0, Math.PI * 2);
       ctx.fill();
     }
+    
+    ctx.restore();
   }
+  
+  // Verification checkmark
   ctx.strokeStyle = '#2ecc71';
   ctx.lineWidth = 6;
   ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(cx - 20, cy + 60);
-  ctx.lineTo(cx - 5, cy + 75);
-  ctx.lineTo(cx + 25, cy + 50);
+  ctx.moveTo(cx - 25, cy + 70);
+  ctx.lineTo(cx - 10, cy + 85);
+  ctx.lineTo(cx + 30, cy + 60);
   ctx.stroke();
+  
+  // Crosshairs
+  ctx.strokeStyle = 'rgba(78, 205, 196, 0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx - viewRadius, cy);
+  ctx.lineTo(cx + viewRadius, cy);
+  ctx.moveTo(cx, cy - viewRadius);
+  ctx.lineTo(cx, cy + viewRadius);
+  ctx.stroke();
+  
+  ctx.fillStyle = '#4ecdc4';
+  ctx.font = '12px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('Viabilidad > 90%', cx, cy + 130);
 }
 
-function drawElectrodePrep(cx, cy, rot) {
-  const perspective = Math.cos(rot);
+function drawElectrodePrep(cx, cy, t) {
+  // 3D graphite electrode
+  const electrodeWidth = 80;
+  const electrodeHeight = 180;
+  const electrodeDepth = 20;
+  
+  // Front face
+  const corners = [
+    [-electrodeWidth/2, -electrodeHeight/2, electrodeDepth],
+    [electrodeWidth/2, -electrodeHeight/2, electrodeDepth],
+    [electrodeWidth/2, electrodeHeight/2, electrodeDepth],
+    [-electrodeWidth/2, electrodeHeight/2, electrodeDepth],
+  ];
+  
+  const projected = corners.map(([x, y, z]) => project3D(x, y, z, cx, cy));
+  
   ctx.fillStyle = '#2c2c2c';
-  ctx.fillRect(cx - 60 * perspective, cy - 100, 120 * Math.abs(perspective), 200);
+  ctx.beginPath();
+  ctx.moveTo(projected[0].x, projected[0].y);
+  ctx.lineTo(projected[1].x, projected[1].y);
+  ctx.lineTo(projected[2].x, projected[2].y);
+  ctx.lineTo(projected[3].x, projected[3].y);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Carbon texture
   ctx.strokeStyle = '#1a1a1a';
   ctx.lineWidth = 1;
-  for (let i = 0; i < 20; i++) {
-    const y = cy - 100 + i * 10;
+  for (let i = 0; i < 30; i++) {
+    const y = -electrodeHeight/2 + (i / 30) * electrodeHeight;
+    const p1 = project3D(-electrodeWidth/2, y, electrodeDepth, cx, cy);
+    const p2 = project3D(electrodeWidth/2, y, electrodeDepth, cx, cy);
     ctx.beginPath();
-    ctx.moveTo(cx - 60 * perspective, y);
-    ctx.lineTo(cx + 60 * perspective, y);
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
     ctx.stroke();
   }
-  for (let i = 0; i < 10; i++) {
-    const x = cx - 40 + (i % 5) * 20;
-    const y = cy - 80 + Math.floor(i / 5) * 40 + Math.sin(rotation * 0.1 + i) * 10;
-    ctx.strokeStyle = 'rgba(100, 200, 255, 0.6)';
+  
+  // UV light rays
+  for (let i = 0; i < 15; i++) {
+    const angle = (i * 24 + t * 2) * Math.PI / 180;
+    const startR = 100;
+    const endR = 160;
+    
+    const x1 = Math.cos(angle) * startR;
+    const z1 = Math.sin(angle) * startR;
+    const x2 = Math.cos(angle) * endR;
+    const z2 = Math.sin(angle) * endR;
+    
+    const p1 = project3D(x1, -60, z1, cx, cy);
+    const p2 = project3D(x2, -80, z2, cx, cy);
+    
+    ctx.strokeStyle = `rgba(100, 200, 255, ${0.3 + Math.sin(t * 0.1 + i) * 0.2})`;
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
     ctx.stroke();
   }
+  
+  // Cleaning bubbles
+  for (let i = 0; i < 12; i++) {
+    const angle = t * 0.05 + i * 0.5;
+    const radius = 40 + Math.sin(t * 0.08 + i) * 15;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    const y = -50 + (i % 4) * 30 + Math.sin(t * 0.1 + i) * 10;
+    
+    const p = project3D(x, y, z, cx, cy);
+    ctx.strokeStyle = `rgba(100, 200, 255, ${0.5 * p.scale})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6 * p.scale, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  
   ctx.fillStyle = '#fff';
   ctx.font = '14px Arial';
   ctx.textAlign = 'center';
-  ctx.fillText('Limpieza + UV', cx, cy + 120);
+  ctx.fillText('Limpieza + Esterilización UV', cx, cy + 130);
 }
 
-function drawInoculation(cx, cy, rot) {
+function drawInoculation(cx, cy, t) {
+  // 3D MFC chamber
+  const chamberW = 140;
+  const chamberH = 120;
+  const chamberD = 80;
+  
+  // Chamber outline
   ctx.strokeStyle = '#555';
   ctx.lineWidth = 3;
-  ctx.strokeRect(cx - 100, cy - 80, 200, 160);
-  ctx.fillStyle = '#2c2c2c';
-  ctx.fillRect(cx - 90, cy - 70, 30, 140);
-  ctx.fillStyle = '#f1c40f';
-  ctx.fillRect(cx - 5, cy - 70, 10, 140);
-  ctx.fillStyle = '#7f8c8d';
-  ctx.fillRect(cx + 60, cy - 70, 30, 140);
-  const injectionY = cy - 100 + (rotation % 100);
+  
+  const chamber = [
+    [-chamberW/2, -chamberH/2, -chamberD/2],
+    [chamberW/2, -chamberH/2, -chamberD/2],
+    [chamberW/2, chamberH/2, -chamberD/2],
+    [-chamberW/2, chamberH/2, -chamberD/2],
+    [-chamberW/2, -chamberH/2, chamberD/2],
+    [chamberW/2, -chamberH/2, chamberD/2],
+    [chamberW/2, chamberH/2, chamberD/2],
+    [-chamberW/2, chamberH/2, chamberD/2]
+  ];
+  
+  const pc = chamber.map(([x, y, z]) => project3D(x, y, z, cx, cy));
+  
+  // Draw chamber faces
+  ctx.fillStyle = 'rgba(44, 44, 44, 0.3)';
+  
+  // Front
+  ctx.beginPath();
+  ctx.moveTo(pc[4].x, pc[4].y);
+  ctx.lineTo(pc[5].x, pc[5].y);
+  ctx.lineTo(pc[6].x, pc[6].y);
+  ctx.lineTo(pc[7].x, pc[7].y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  
+  // Anode (left)
+  ctx.fillStyle = '#1a1a1a';
   for (let i = 0; i < 15; i++) {
-    const x = cx - 50 + Math.sin(i + rotation * 0.1) * 20;
-    const y = injectionY + i * 8;
-    if (y < cy + 70) {
-      ctx.fillStyle = '#e74c3c';
-      ctx.beginPath();
-      ctx.arc(x, y, 3, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#8e44ad';
-      ctx.beginPath();
-      ctx.arc(x + 2, y, 1.5, 0, Math.PI * 2);
-      ctx.fill();
+    const x = -chamberW/2 + 10;
+    const y = -chamberH/2 + (i / 15) * chamberH;
+    const p1 = project3D(x, y, -chamberD/2 + 10, cx, cy);
+    const p2 = project3D(x, y, chamberD/2 - 10, cx, cy);
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+  }
+  
+  // Membrane (center)
+  ctx.fillStyle = 'rgba(241, 196, 15, 0.4)';
+  ctx.strokeStyle = '#f1c40f';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  const mp1 = project3D(0, -chamberH/2, -chamberD/2 + 10, cx, cy);
+  const mp2 = project3D(0, -chamberH/2, chamberD/2 - 10, cx, cy);
+  const mp3 = project3D(0, chamberH/2, chamberD/2 - 10, cx, cy);
+  const mp4 = project3D(0, chamberH/2, -chamberD/2 + 10, cx, cy);
+  ctx.moveTo(mp1.x, mp1.y);
+  ctx.lineTo(mp2.x, mp2.y);
+  ctx.lineTo(mp3.x, mp3.y);
+  ctx.lineTo(mp4.x, mp4.y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  
+  // Cathode (right)
+  ctx.strokeStyle = '#888';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 15; i++) {
+    const x = chamberW/2 - 10;
+    const y = -chamberH/2 + (i / 15) * chamberH;
+    const p1 = project3D(x, y, -chamberD/2 + 10, cx, cy);
+    const p2 = project3D(x, y, chamberD/2 - 10, cx, cy);
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+  }
+  
+  // Inoculation injection
+  const injectionProgress = (t % 200) / 200;
+  const syringeY = -chamberH/2 - 40 + injectionProgress * 60;
+  
+  ctx.strokeStyle = '#888';
+  ctx.lineWidth = 6;
+  const sp1 = project3D(-30, syringeY, 0, cx, cy);
+  const sp2 = project3D(-30, -chamberH/2 + 20, 0, cx, cy);
+  ctx.beginPath();
+  ctx.moveTo(sp1.x, sp1.y);
+  ctx.lineTo(sp2.x, sp2.y);
+  ctx.stroke();
+  
+  // Bacteria + magnetite droplets
+  if (injectionProgress > 0.3) {
+    for (let i = 0; i < 20; i++) {
+      const dropY = syringeY + 30 + i * 8;
+      if (dropY < chamberH/2 - 20) {
+        const x = -30 + Math.sin(i + t * 0.1) * 15;
+        const p = project3D(x, dropY, 0, cx, cy);
+        
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3 * p.scale, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#8e44ad';
+        ctx.beginPath();
+        ctx.arc(p.x + 2, p.y, 1.5 * p.scale, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
-  ctx.strokeStyle = '#888';
-  ctx.lineWidth = 8;
-  ctx.beginPath();
-  ctx.moveTo(cx - 50, cy - 120);
-  ctx.lineTo(cx - 50, injectionY - 20);
-  ctx.stroke();
+  
+  ctx.fillStyle = '#fff';
+  ctx.font = '14px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('Inoculación 20-30%', cx, cy + 150);
 }
 
-function drawAcclimation(cx, cy, rot) {
+function drawAcclimation(cx, cy, t) {
+  // MFC with growing biofilm
+  const chamberW = 140;
+  const chamberH = 120;
+  const chamberD = 80;
+  
+  const chamber = [
+    [-chamberW/2, -chamberH/2, -chamberD/2],
+    [chamberW/2, -chamberH/2, -chamberD/2],
+    [chamberW/2, chamberH/2, -chamberD/2],
+    [-chamberW/2, chamberH/2, -chamberD/2],
+    [-chamberW/2, -chamberH/2, chamberD/2],
+    [chamberW/2, -chamberH/2, chamberD/2],
+    [chamberW/2, chamberH/2, chamberD/2],
+    [-chamberW/2, chamberH/2, chamberD/2]
+  ];
+  
+  const pc = chamber.map(([x, y, z]) => project3D(x, y, z, cx, cy));
+  
+  // Chamber
   ctx.strokeStyle = '#555';
   ctx.lineWidth = 3;
-  ctx.strokeRect(cx - 100, cy - 80, 200, 160);
-  ctx.fillStyle = '#2c2c2c';
-  ctx.fillRect(cx - 90, cy - 70, 30, 140);
-  const biofilmThickness = (rotation % 100) / 5;
+  ctx.fillStyle = 'rgba(44, 44, 44, 0.3)';
+  ctx.beginPath();
+  ctx.moveTo(pc[4].x, pc[4].y);
+  ctx.lineTo(pc[5].x, pc[5].y);
+  ctx.lineTo(pc[6].x, pc[6].y);
+  ctx.lineTo(pc[7].x, pc[7].y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  
+  // Anode with growing biofilm
+  const biofilmGrowth = (t % 300) / 300;
+  const biofilmThickness = biofilmGrowth * 12;
+  
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(pc[7].x - 15, pc[7].y, 15, pc[6].y - pc[7].y);
+  
+  // Biofilm layer
   ctx.fillStyle = 'rgba(231, 76, 60, 0.6)';
-  ctx.fillRect(cx - 60, cy - 70, biofilmThickness, 140);
-  for (let i = 0; i < 30; i++) {
-    const x = cx - 60 + Math.random() * biofilmThickness;
-    const y = cy - 70 + i * 4.5;
-    ctx.fillStyle = '#e74c3c';
-    const pulse = 1 + Math.sin(rotation * 0.1 + i) * 0.3;
+  ctx.fillRect(pc[7].x - 15 + 15, pc[7].y, biofilmThickness, pc[6].y - pc[7].y);
+  
+  // Individual bacteria in biofilm
+  for (let i = 0; i < 40; i++) {
+    const bx = -chamberW/2 + 15 + Math.random() * biofilmThickness;
+    const by = -chamberH/2 + (i / 40) * chamberH;
+    const bz = (Math.random() - 0.5) * (chamberD - 20);
+    
+    const p = project3D(bx, by, bz, cx, cy);
+    const pulse = 1 + Math.sin(t * 0.12 + i) * 0.3;
+    ctx.fillStyle = `rgba(231, 76, 60, ${0.9 * p.scale})`;
     ctx.beginPath();
-    ctx.arc(x, y, 2 * pulse, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, 2.5 * pulse * p.scale, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Magnetite
+    ctx.fillStyle = `rgba(142, 68, 173, ${0.8 * p.scale})`;
+    ctx.beginPath();
+    ctx.arc(p.x + 1, p.y, 1 * p.scale, 0, Math.PI * 2);
     ctx.fill();
   }
-  const voltage = ((rotation % 100) / 100 * 0.3).toFixed(2);
+  
+  // Electron transfer visualization
+  for (let i = 0; i < 10; i++) {
+    const ex = -chamberW/2 + 15 + biofilmThickness;
+    const ey = -chamberH/2 + (i / 10) * chamberH + Math.sin(t * 0.1 + i) * 5;
+    const ez = (Math.random() - 0.5) * 30;
+    
+    const p = project3D(ex, ey, ez, cx, cy);
+    ctx.strokeStyle = `rgba(255, 215, 0, ${0.6 + Math.sin(t * 0.15 + i) * 0.3})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    const p2 = project3D(ex + 20, ey, ez, cx, cy);
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+  }
+  
+  // Voltage display
+  const voltage = (biofilmGrowth * 0.6).toFixed(2);
+  ctx.fillStyle = '#2ecc71';
+  ctx.font = 'bold 24px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${voltage}V`, cx, cy + 130);
+  
+  ctx.fillStyle = '#fff';
+  ctx.font = '14px Arial';
+  ctx.fillText(`Biofilm: ${(biofilmGrowth * 100).toFixed(0)}%`, cx, cy + 150);
+  ctx.fillText('5-10 días', cx, cy + 170);
+}
+
+function drawProduction(cx, cy, t) {
+  // Fully operational MFC
+  const chamberW = 140;
+  const chamberH = 120;
+  const chamberD = 80;
+  
+  const chamber = [
+    [-chamberW/2, -chamberH/2, -chamberD/2],
+    [chamberW/2, -chamberH/2, -chamberD/2],
+    [chamberW/2, chamberH/2, -chamberD/2],
+    [-chamberW/2, chamberH/2, -chamberD/2],
+    [-chamberW/2, -chamberH/2, chamberD/2],
+    [chamberW/2, -chamberH/2, chamberD/2],
+    [chamberW/2, chamberH/2, chamberD/2],
+    [-chamberW/2, chamberH/2, chamberD/2]
+  ];
+  
+  const pc = chamber.map(([x, y, z]) => project3D(x, y, z, cx, cy));
+  
+  // Chamber with glow effect
+  ctx.strokeStyle = '#555';
+  ctx.lineWidth = 3;
+  ctx.fillStyle = 'rgba(44, 44, 44, 0.4)';
+  ctx.beginPath();
+  ctx.moveTo(pc[4].x, pc[4].y);
+  ctx.lineTo(pc[5].x, pc[5].y);
+  ctx.lineTo(pc[6].x, pc[6].y);
+  ctx.lineTo(pc[7].x, pc[7].y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  
+  // Anode with mature biofilm
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(pc[7].x - 15, pc[7].y, 15, pc[6].y - pc[7].y);
+  
+  ctx.fillStyle = 'rgba(231, 76, 60, 0.85)';
+  ctx.fillRect(pc[7].x - 15 + 15, pc[7].y, 15, pc[6].y - pc[7].y);
+  
+  // Active bacteria producing electricity
+  for (let i = 0; i < 50; i++) {
+    const bx = -chamberW/2 + 20 + Math.random() * 12;
+    const by = -chamberH/2 + (i / 50) * chamberH;
+    const bz = (Math.random() - 0.5) * (chamberD - 20);
+    
+    const p = project3D(bx, by, bz, cx, cy);
+    const pulse = 1 + Math.sin(t * 0.2 + i) * 0.5;
+    
+    // Glowing bacteria
+    ctx.fillStyle = `rgba(231, 76, 60, ${0.9 * p.scale})`;
+    ctx.shadowBlur = 8 * pulse;
+    ctx.shadowColor = 'rgba(231, 76, 60, 0.8)';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3 * pulse * p.scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    // Magnetite
+    ctx.fillStyle = `rgba(142, 68, 173, ${p.scale})`;
+    ctx.beginPath();
+    ctx.arc(p.x + 1, p.y, 1.2 * p.scale, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  // Electric current flowing (animated particles)
+  for (let i = 0; i < 20; i++) {
+    const progress = ((t * 2 + i * 10) % 100) / 100;
+    const ex = -chamberW/2 + 30 + progress * 50;
+    const ey = -chamberH/2 + (i / 20) * chamberH;
+    const ez = (Math.random() - 0.5) * 30;
+    
+    const p = project3D(ex, ey, ez, cx, cy);
+    
+    const alpha = progress < 0.5 ? progress * 2 : (1 - progress) * 2;
+    ctx.fillStyle = `rgba(255, 215, 0, ${alpha * p.scale})`;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3 * p.scale, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+  
+  // Electrical arc effect
+  ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+  ctx.lineWidth = 3;
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+  
+  for (let i = 0; i < 5; i++) {
+    const startX = -chamberW/2 + 30;
+    const endX = 0;
+    const y = -chamberH/2 + ((i + 0.5) / 5) * chamberH;
+    
+    ctx.beginPath();
+    const p1 = project3D(startX, y, 0, cx, cy);
+    
+    for (let j = 0; j <= 10; j++) {
+      const progress = j / 10;
+      const x = startX + (endX - startX) * progress;
+      const offset = Math.sin(t * 0.15 + i + j) * 8;
+      const p = project3D(x, y + offset, 0, cx, cy);
+      
+      if (j === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+  }
+  ctx.shadowBlur = 0;
+  
+  // Wire connections
+  ctx.strokeStyle = '#c0392b';
+  ctx.lineWidth = 4;
+  const wire1 = project3D(-chamberW/2 + 5, -chamberH/2 - 20, 0, cx, cy);
+  const wire2 = project3D(-chamberW/2 + 5, -chamberH/2 - 60, 0, cx, cy);
+  ctx.beginPath();
+  ctx.moveTo(wire1.x, wire1.y);
+  ctx.lineTo(wire2.x, wire2.y);
+  ctx.stroke();
+  
+  ctx.strokeStyle = '#27ae60';
+  const wire3 = project3D(chamberW/2 - 5, -chamberH/2 - 20, 0, cx, cy);
+  const wire4 = project3D(chamberW/2 - 5, -chamberH/2 - 60, 0, cx, cy);
+  ctx.beginPath();
+  ctx.moveTo(wire3.x, wire3.y);
+  ctx.lineTo(wire4.x, wire4.y);
+  ctx.stroke();
+  
+  // Light bulb icon (powered on)
+  const bulbY = cy - 130;
+  ctx.fillStyle = '#ffd700';
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = 'rgba(255, 215, 0, 0.9)';
+  ctx.beginPath();
+  ctx.arc(cx, bulbY, 15, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx - 8, bulbY + 18);
+  ctx.lineTo(cx + 8, bulbY + 18);
+  ctx.stroke();
+  
+  // Voltage and power readings
+  const voltage = 0.5 + Math.abs(Math.sin(t * 0.03)) * 0.3;
+  const power = 50 + Math.abs(Math.sin(t * 0.03)) * 150;
+  
   ctx.fillStyle = '#2ecc71';
   ctx.font = 'bold 20px Arial';
   ctx.textAlign = 'center';
-  ctx.fillText(`${voltage}V`, cx, cy + 110);
+  ctx.fillText(`⚡ ${voltage.toFixed(2)} V`, cx, cy + 130);
+  
   ctx.fillStyle = '#fff';
-  ctx.font = '12px Arial';
-  ctx.fillText('Formando biofilm...', cx, cy + 130);
+  ctx.font = '14px Arial';
+  ctx.fillText(`${power.toFixed(0)} mW/m²`, cx, cy + 150);
+  ctx.fillText('✓ Producción estable', cx, cy + 170);
 }
 
-function drawProduction(cx, cy, rot) {
-  ctx.strokeStyle = '#555';
-  ctx.lineWidth = 3;
-  ctx.strokeRect(cx - 100, cy - 80, 200, 160);
-  ctx.fillStyle = '#2c2c2c';
-  ctx.fillRect(cx - 90, cy - 70, 30, 140);
-  ctx.fillStyle = 'rgba(231, 76, 60, 0.85)';
-  ctx.fillRect(cx - 60, cy - 70, 15, 140);
-  for (let i = 0; i < 30; i++) {
-    const x = cx - 52 + Math.random() * 10;
-    const y = cy - 70 + i * 4.5;
-    const pulse = 1 + Math.sin(rotation * 0.2 + i) * 0.5;
-    ctx.fillStyle = '#e74c3c';
-    ctx.beginPath();
-    ctx.arc(x, y, 2 * pulse, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  // Voltage/Power visual
-  const vol = 0.5 + Math.abs(Math.sin(rotation*0.02))*0.3;
-  ctx.fillStyle = '#2ecc71';
-  ctx.font = '16px Arial';
-  ctx.textAlign = 'left';
-  ctx.fillText(`Voltaje: ${vol.toFixed(2)} V`, cx - 95, cy + 110);
-  ctx.fillText('Producción estable ✓', cx - 95, cy + 130);
-}
-
-/* Main render function chooses which draw to call */
 function render() {
   clear();
-  // set a central point according to canvas size (CSS pixels)
   const rect = canvas.getBoundingClientRect();
   const cx = rect.width / 2;
   const cy = rect.height / 2;
 
-  // subtle vignette background
-  ctx.fillStyle = '#050823';
-  ctx.fillRect(0,0,rect.width,rect.height);
-  // choose drawing by currentStep
   switch(currentStep) {
-    case 0: drawMediumPreparation(cx, cy, rotation*Math.PI/180); break;
-    case 1: drawSterilization(cx, cy, rotation*Math.PI/180); break;
-    case 2: drawMagnetiteSynthesis(cx, cy, rotation*Math.PI/180); break;
-    case 3: drawFunctionalization(cx, cy, rotation*Math.PI/180); break;
-    case 4: drawBacteriaSource(cx, cy, rotation*Math.PI/180); break;
-    case 5: drawInitialCulture(cx, cy, rotation*Math.PI/180); break;
-    case 6: drawMagnetiteIncorporation(cx, cy, rotation*Math.PI/180); break;
-    case 7: drawVerification(cx, cy, rotation*Math.PI/180); break;
-    case 8: drawElectrodePrep(cx, cy, rotation*Math.PI/180); break;
-    case 9: drawInoculation(cx, cy, rotation*Math.PI/180); break;
-    case 10: drawAcclimation(cx, cy, rotation*Math.PI/180); break;
-    case 11: drawProduction(cx, cy, rotation*Math.PI/180); break;
+    case 0: drawMediumPreparation(cx, cy, rotation); break;
+    case 1: drawSterilization(cx, cy, rotation); break;
+    case 2: drawMagnetiteSynthesis(cx, cy, rotation); break;
+    case 3: drawFunctionalization(cx, cy, rotation); break;
+    case 4: drawBacteriaSource(cx, cy, rotation); break;
+    case 5: drawInitialCulture(cx, cy, rotation); break;
+    case 6: drawMagnetiteIncorporation(cx, cy, rotation); break;
+    case 7: drawVerification(cx, cy, rotation); break;
+    case 8: drawElectrodePrep(cx, cy, rotation); break;
+    case 9: drawInoculation(cx, cy, rotation); break;
+    case 10: drawAcclimation(cx, cy, rotation); break;
+    case 11: drawProduction(cx, cy, rotation); break;
   }
 }
 
-/* Animation loop */
 function loop() {
-  rotation = (rotation + 0.5 * speed) % 360;
+  rotation = (rotation + 0.5 * speed);
   render();
   raf = requestAnimationFrame(loop);
 }
 
-/* Start/stop control helpers */
 function startLoop() {
   if (!raf) raf = requestAnimationFrame(loop);
 }
+
 function stopLoop() {
   if (raf) { cancelAnimationFrame(raf); raf = null; }
 }
 
-/* initial render */
 updatePanel();
 renderChips();
 render();
-
-/* Clean-up when pausing */
-window.addEventListener('blur', () => { /* optional pause when window loses focus */ });
-
-/* Optional: click canvas to toggle play/pause */
-canvas.addEventListener('click', () => {
-  if (isPlaying) { pauseBtn.click(); } else { playBtn.click(); }
-});
 </script>
 </body>
 </html>
