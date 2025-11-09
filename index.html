@@ -3,54 +3,181 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>proyecto</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>index</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>modificación de bacterias con nanopartículas de magnetita para producir energía eléctrica</h1>
-    <p>biblioteca central de proyectos HTML</p>
-  </header>
+  <div id="start-screen">
+    <button id="start-button">
+      
+      <img src="sellos_mahito.png" alt="Iniciar Expansión de Dominio">
+    </button>
+    <p class="start-text">Presiona para comenzar</p>
+  </div>
 
-  <main class="projects-container">
-    <!-- 🔹 Copia y pega este bloque para agregar más proyectos -->
-    <div class="project-card">
-      <h2>BacteriaEnergy3D</h2>
-      <p>Modelo en 3d.</p>
-      <a href="BacteriaEnergy3D.html">Abrir</a>
+  <div id="domain-expansion">
+    
+    <video id="background-video" autoplay muted loop playsinline>
+      <source src="mahito.mp4" type="video/mp4">
+    </video>
+
+    <div class="domain-text">
+      EXPANSIÓN DE DOMINIO
+      <span class="domain-subtitle">Encarnación de la Perfección</span>
     </div>
 
-    <div class="project-card">
-      <h2>investigacion</h2>
-      <p>la informacion del proyecto.</p>
-      <a href="libroJHJ.html">Abrir</a>
-    </div>
+    <!-- Overlay de cierre -->
+    <div class="closing-overlay"></div>
+  </div>
 
-    <div class="project-card">
-      <h2>Simulador2d</h2>
-      <p>Modelo en 2d.</p>
-      <a href="Simulador2d.html">Abrir</a>
-    </div>
-    <div class="project-card">
-      <h2>simulacion bacterias</h2>
-      <p>Modelo en 3d Bacteriuas.</p>
-      <a href="simulacion_bacterias.html">Abrir</a>
-    </div>
-    <div class="project-card">
-      <h2>Manual de simulacion_bacterias</h2>
-      <p>La informacion del manual de simulacion_bacterias.</p>
-      <a href="manual_bacteria_simulacion.html">Abrir</a>
-    </div>
-    <div class="project-card">
-      <h2>modelo3d interactivo</h2>
-      <p>Es el mismo modelo 3d pero interactivo.</p>
-      <a href="modelo3d_interactivo.html">Abrir</a>
-    </div>
-    <!-- 🔹 Para agregar más proyectos, copia y pega desde aquí -->
-  </main>
-  <footer>
-    <p>© 2025 | Panel de proyectos HTML</p>
-  </footer>
+  <div class="skip-hint" id="skipHint" style="display: none;">Haz clic para saltar →</div>
+
+  <audio id="domainAudio" preload="auto">
+    <source src="audio_mahito.m4a" type="audio/mp4">
+  </audio>
+
+  <!-- CONTENIDO PRINCIPAL DE LA PÁGINA -->
+  <div class="main-content">
+    <header>
+      <h1>Modificación de bacterias con nanopartículas de magnetita para producir energía eléctrica</h1>
+      <p>Biblioteca central de proyectos HTML</p>
+    </header>
+
+    <main class="projects-container">
+      <div class="project-card">
+        <h2>BacteriaEnergy3D</h2>
+        <p>Modelo en 3D.</p>
+        <a href="BacteriaEnergy3D.html">Abrir</a>
+      </div>
+
+      <div class="project-card">
+        <h2>Investigación</h2>
+        <p>La información del proyecto.</p>
+        <a href="libroJHJ.html">Abrir</a>
+      </div>
+
+      <div class="project-card">
+        <h2>Simulador 2D</h2>
+        <p>Modelo en 2D.</p>
+        <a href="Simulador2d.html">Abrir</a>
+      </div>
+
+      <div class="project-card">
+        <h2>Simulación bacterias</h2>
+        <p>Modelo en 3D Bacterias.</p>
+        <a href="simulacion_bacterias.html">Abrir</a>
+      </div>
+
+      <div class="project-card">
+        <h2>Manual de simulación bacterias</h2>
+        <p>La información del manual de simulación bacterias.</p>
+        <a href="manual_bacteria_simulacion.html">Abrir</a>
+      </div>
+
+      <div class="project-card">
+        <h2>Modelo 3D interactivo</h2>
+        <p>Es el mismo modelo 3D pero interactivo.</p>
+        <a href="modelo3d_interactivo.html">Abrir</a>
+      </div>
+    </main>
+
+    <footer>
+      <p>© 2025 | Panel de proyectos HTML</p>
+    </footer>
+  </div>
+
+  <!-- JAVASCRIPT -->
+  <script>
+    // Elementos
+    const startButton = document.getElementById('start-button');
+    const startScreen = document.getElementById('start-screen');
+    const domainExpansion = document.getElementById('domain-expansion');
+    const skipHint = document.getElementById('skipHint');
+    const audio = document.getElementById('domainAudio');
+    const video = document.getElementById('background-video');
+    const mainContent = document.querySelector('.main-content');
+
+    console.log('Página cargada correctamente');
+
+    // Al presionar el botón de inicio
+    startButton.addEventListener('click', () => {
+      console.log('Botón presionado - Iniciando animación');
+      
+      // Ocultar pantalla de inicio
+      startScreen.style.opacity = '0';
+      setTimeout(() => {
+        startScreen.classList.add('hidden');
+      }, 500);
+      
+      // Mostrar animación
+      domainExpansion.classList.add('active');
+      
+      // Mostrar hint para saltar
+      skipHint.style.display = 'block';
+      
+      // Reproducir audio
+      audio.volume = 1.0;
+      audio.play()
+        .then(() => console.log('Audio iniciado'))
+        .catch(e => console.log('Error con audio:', e));
+      
+      // Reproducir video
+      video.play()
+        .then(() => console.log('Video iniciado'))
+        .catch(e => console.log('Error con video:', e));
+
+      // Ocultar animación después de 7 segundos (reducido de 7.5)
+      setTimeout(() => {
+        console.log('Terminando animación automáticamente');
+        hideAnimation();
+      }, 7000);
+    });
+
+    // Función para ocultar la animación
+    function hideAnimation() {
+      console.log('Ocultando animación');
+      
+      skipHint.style.display = 'none';
+      
+      // Detener audio
+      audio.pause();
+      audio.currentTime = 0;
+      
+      // Detener video
+      video.pause();
+      
+      // Transición más rápida
+      setTimeout(() => {
+        domainExpansion.classList.remove('active');
+        domainExpansion.classList.add('hidden');
+        
+        // Mostrar contenido principal INMEDIATAMENTE
+        mainContent.style.opacity = '1';
+        mainContent.style.animation = 'none';
+      }, 500); // Reducido de 1500 a 500
+    }
+
+    // Clic para saltar la animación (solo si está activa)
+    document.addEventListener('click', (e) => {
+      // No hacer nada si se hace clic en el botón de inicio
+      if (e.target === startButton || e.target.closest('#start-button') || e.target.closest('#start-screen')) {
+        return;
+      }
+      
+      // Solo saltar si la animación está activa
+      if (domainExpansion.classList.contains('active') && !domainExpansion.classList.contains('hidden')) {
+        console.log('Saltando animación por clic');
+        
+        // Acelerar el cierre
+        const closingOverlay = document.querySelector('.closing-overlay');
+        closingOverlay.style.animation = 'fadeToBlack 0.5s ease-in forwards';
+        
+        setTimeout(() => {
+          hideAnimation();
+        }, 500);
+      }
+    });
+  </script>
 </body>
 </html>
 
