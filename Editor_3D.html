@@ -405,7 +405,8 @@
             </div>
             <div class="header-actions">
                 <button class="btn btn-secondary" onclick="clearAll()">🗑️ Limpiar</button>
-                <button class="btn btn-secondary" onclick="exportProject()">💾 Exportar</button>
+                <button class="btn btn-secondary" onclick="importProject()">📂 Importar</button>
+                <button class="btn btn-secondary" onclick="saveProject()">💾 Guardar</button>
                 <button class="btn btn-primary" onclick="runSimulation()">▶️ Ejecutar</button>
             </div>
         </div>
@@ -597,6 +598,54 @@
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="stopSimulation()">⏹️ Detener</button>
                 <button class="btn btn-primary" onclick="closeModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de importar -->
+    <div class="modal" id="importModal">
+        <div class="modal-content">
+            <div class="modal-title">📂 Importar Proyecto</div>
+            <div class="modal-text">
+                <p style="margin-bottom: 15px;">Selecciona un archivo de proyecto (.json) guardado previamente en tu computadora:</p>
+                <input type="file" id="fileInput" accept=".json" style="
+                    width: 100%;
+                    padding: 10px;
+                    background: rgba(255,255,255,0.1);
+                    border: 2px dashed rgba(255,255,255,0.3);
+                    border-radius: 8px;
+                    color: white;
+                    cursor: pointer;
+                    margin-bottom: 15px;
+                ">
+                <div id="importStatus" style="color: #10b981; font-size: 13px;"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeImportModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="loadSelectedFile()">Cargar Proyecto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación guardar -->
+    <div class="modal" id="saveModal">
+        <div class="modal-content">
+            <div class="modal-title">💾 Guardar Proyecto</div>
+            <div class="modal-text">
+                <p style="margin-bottom: 15px;">Dale un nombre a tu proyecto:</p>
+                <input type="text" id="projectName" class="property-input" placeholder="Mi_Proyecto_3D" value="Mi_Proyecto_3D" style="margin-bottom: 15px;">
+                <div style="background: rgba(16, 185, 129, 0.2); padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.6;">
+                    <strong>📦 Tu proyecto incluye:</strong><br>
+                    • <span id="saveObjectCount">0</span> objetos 3D<br>
+                    • <span id="saveBlockCount">0</span> bloques de programación<br>
+                    • Código generado automáticamente<br>
+                    <br>
+                    El archivo se descargará a tu carpeta de Descargas
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeSaveModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmSaveProject()">💾 Descargar Archivo</button>
             </div>
         </div>
     </div>
@@ -1221,32 +1270,297 @@
             document.getElementById('runModal').classList.remove('active');
         }
         
-        // Exportar proyecto
-        function exportProject() {
+        // SISTEMA DE GUARDAR E IMPORTAR
+        
+        // Guardar proyecto
+        function saveProject() {
+            if (objects.length === 0) {
+                alert('⚠️ No hay objetos para guardar. Crea algunos objetos 3D primero.');
+                return;
+            }
+            
+            // Actualizar contadores en el modal
+            document.getElementById('saveObjectCount').textContent = objects.length;
+            document.getElementById('saveBlockCount').textContent = programBlocks.length;
+            
+            // Mostrar modal de guardar
+            document.getElementById('saveModal').classList.add('active');
+            
+            // Generar nombre con fecha
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+            document.getElementById('projectName').value = `Proyecto_3D_${dateStr}`;
+        }
+        
+        // Confirmar y descargar proyecto
+        function confirmSaveProject() {
+            const projectName = document.getElementById('projectName').value || 'Proyecto_3D';
+            
             const project = {
+                version: '1.0',
+                name: projectName,
+                createdAt: new Date().toISOString(),
                 objects: objects.map(obj => ({
                     type: obj.userData.type,
                     name: obj.userData.name,
-                    position: obj.position.toArray(),
-                    rotation: obj.rotation.toArray(),
-                    scale: obj.scale.toArray(),
-                    color: '#' + obj.material.color.getHexString()
+                    id: obj.userData.id,
+                    position: {
+                        x: obj.position.x,
+                        y: obj.position.y,
+                        z: obj.position.z
+                    },
+                    rotation: {
+                        x: obj.rotation.x,
+                        y: obj.rotation.y,
+                        z: obj.rotation.z
+                    },
+                    scale: {
+                        x: obj.scale.x,
+                        y: obj.scale.y,
+                        z: obj.scale.z
+                    },
+                    color: '#' + obj.material.color.getHexString(),
+                    visible: obj.visible,
+                    animate: obj.userData.animate
                 })),
                 blocks: programBlocks,
-                code: document.getElementById('code-preview').textContent
+                code: document.getElementById('code-preview').textContent,
+                cameraPosition: {
+                    x: camera.position.x,
+                    y: camera.position.y,
+                    z: camera.position.z
+                }
             };
             
+            // Crear archivo JSON
             const dataStr = JSON.stringify(project, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             
+            // Descargar archivo
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'proyecto_3d.json';
+            a.download = `${projectName}.json`;
+            document.body.appendChild(a);
             a.click();
-            
+            document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            alert('✅ Proyecto exportado correctamente');
+            
+            // Cerrar modal y mostrar confirmación
+            closeSaveModal();
+            
+            // Mostrar notificación
+            showNotification('✅ Proyecto guardado correctamente en tu carpeta de Descargas', 'success');
+        }
+        
+        // Cerrar modal de guardar
+        function closeSaveModal() {
+            document.getElementById('saveModal').classList.remove('active');
+        }
+        
+        // Importar proyecto
+        function importProject() {
+            document.getElementById('importModal').classList.add('active');
+            document.getElementById('importStatus').textContent = '';
+            document.getElementById('fileInput').value = '';
+        }
+        
+        // Cargar archivo seleccionado
+        function loadSelectedFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                document.getElementById('importStatus').innerHTML = '⚠️ Por favor selecciona un archivo';
+                document.getElementById('importStatus').style.color = '#f59e0b';
+                return;
+            }
+            
+            if (!file.name.endsWith('.json')) {
+                document.getElementById('importStatus').innerHTML = '❌ El archivo debe ser .json';
+                document.getElementById('importStatus').style.color = '#ef4444';
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const project = JSON.parse(e.target.result);
+                    
+                    // Validar estructura del proyecto
+                    if (!project.objects || !Array.isArray(project.objects)) {
+                        throw new Error('Formato de proyecto inválido');
+                    }
+                    
+                    // Limpiar escena actual
+                    objects.forEach(obj => scene.remove(obj));
+                    objects = [];
+                    programBlocks = [];
+                    deselectObject();
+                    
+                    // Cargar objetos
+                    project.objects.forEach(objData => {
+                        loadObject(objData);
+                    });
+                    
+                    // Cargar bloques de programación
+                    if (project.blocks && Array.isArray(project.blocks)) {
+                        programBlocks = project.blocks;
+                        blockCounter = Math.max(...programBlocks.map(b => b.id), 0) + 1;
+                    }
+                    
+                    // Restaurar posición de cámara
+                    if (project.cameraPosition) {
+                        camera.position.set(
+                            project.cameraPosition.x,
+                            project.cameraPosition.y,
+                            project.cameraPosition.z
+                        );
+                        camera.lookAt(0, 0, 0);
+                    }
+                    
+                    // Actualizar UI
+                    updateObjectCount();
+                    updateWorkspace();
+                    updateCodePreview();
+                    
+                    // Cerrar modal
+                    closeImportModal();
+                    
+                    // Mostrar notificación
+                    showNotification(`✅ Proyecto "${project.name || 'Sin nombre'}" cargado correctamente`, 'success');
+                    
+                } catch (error) {
+                    console.error('Error al cargar proyecto:', error);
+                    document.getElementById('importStatus').innerHTML = '❌ Error: Archivo corrupto o formato incorrecto';
+                    document.getElementById('importStatus').style.color = '#ef4444';
+                }
+            };
+            
+            reader.onerror = function() {
+                document.getElementById('importStatus').innerHTML = '❌ Error al leer el archivo';
+                document.getElementById('importStatus').style.color = '#ef4444';
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        // Cargar un objeto desde datos guardados
+        function loadObject(objData) {
+            let geometry;
+            
+            switch(objData.type) {
+                case 'box':
+                    geometry = new THREE.BoxGeometry(1, 1, 1);
+                    break;
+                case 'sphere':
+                    geometry = new THREE.SphereGeometry(0.5, 32, 32);
+                    break;
+                case 'cylinder':
+                    geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
+                    break;
+                case 'cone':
+                    geometry = new THREE.ConeGeometry(0.5, 1, 32);
+                    break;
+                case 'torus':
+                    geometry = new THREE.TorusGeometry(0.5, 0.2, 16, 100);
+                    break;
+                case 'plane':
+                    geometry = new THREE.PlaneGeometry(2, 2);
+                    break;
+                default:
+                    geometry = new THREE.BoxGeometry(1, 1, 1);
+            }
+            
+            const material = new THREE.MeshPhongMaterial({ 
+                color: objData.color || '#ef4444',
+                flatShading: false
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            
+            // Restaurar propiedades
+            mesh.position.set(objData.position.x, objData.position.y, objData.position.z);
+            mesh.rotation.set(objData.rotation.x, objData.rotation.y, objData.rotation.z);
+            mesh.scale.set(objData.scale.x, objData.scale.y, objData.scale.z);
+            mesh.visible = objData.visible !== undefined ? objData.visible : true;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            
+            mesh.userData = {
+                id: objData.id || Date.now(),
+                type: objData.type,
+                name: objData.name || `${objData.type}_${objects.length + 1}`,
+                animate: objData.animate || false
+            };
+            
+            scene.add(mesh);
+            objects.push(mesh);
+        }
+        
+        // Cerrar modal de importar
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('active');
+        }
+        
+        // Mostrar notificación temporal
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: ${type === 'success' ? 'linear-gradient(135deg, #10b981, #059669)' : 
+                             type === 'error' ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 
+                             'linear-gradient(135deg, #3b82f6, #2563eb)'};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                z-index: 3000;
+                font-weight: 600;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            
+            // Agregar animación
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(400px);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(notification);
+            
+            // Remover después de 3 segundos
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+        
+        // Exportar proyecto (función legacy, ahora usa saveProject)
+        function exportProject() {
+            saveProject();
         }
     </script>
 </body>
