@@ -1,21 +1,23 @@
 function enviar() {
-    let texto = document.getElementById("mensaje").value;
+    let mensaje = document.getElementById("mensaje").value;
 
-    let formData = new FormData();
-    formData.append("mensaje", texto);
+    let form = new FormData();
+    form.append("mensaje", mensaje);
 
-    fetch("http://www.nanoenergy.ct.ws/ia.php", {
+    fetch("https://www.nanoenergy.ct.ws/ia.php", {
         method: "POST",
-        body: formData
+        body: form
     })
     .then(res => res.json())
     .then(data => {
-
-        let salida = data[0]?.generated_text ?? "Sin respuesta";
+        // Para modelos que devuelven "generated_text"
+        let salida = data.generated_text 
+                  || data[0]?.generated_text
+                  || JSON.stringify(data);
 
         document.getElementById("respuesta").innerText = salida;
     })
     .catch(err => {
-        document.getElementById("respuesta").innerText = "Error de conexión: " + err;
+        document.getElementById("respuesta").innerText = "Error: " + err;
     });
 }
