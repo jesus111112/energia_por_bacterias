@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulador 3D con Programación por Bloques</title>
+    <title>Simulador 3D con Programación por Bloques y Editor JS</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         * {
@@ -19,7 +19,6 @@
             color: white;
         }
         
-        /* Layout principal */
         .container {
             display: grid;
             grid-template-columns: 300px 1fr 350px;
@@ -28,7 +27,6 @@
             gap: 0;
         }
         
-        /* Header */
         .header {
             grid-column: 1 / -1;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -78,7 +76,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         
-        /* Panel de herramientas */
         .tools-panel {
             background: rgba(15, 23, 42, 0.95);
             border-right: 1px solid rgba(255,255,255,0.1);
@@ -175,7 +172,6 @@
             border-color: #667eea;
         }
         
-        /* Canvas 3D */
         .canvas-area {
             position: relative;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -204,7 +200,6 @@
             font-size: 12px;
         }
         
-        /* Panel de propiedades */
         .properties-panel {
             background: rgba(15, 23, 42, 0.95);
             border-left: 1px solid rgba(255,255,255,0.1);
@@ -232,7 +227,6 @@
             font-size: 13px;
         }
         
-        /* Panel de programación */
         .programming-panel {
             grid-column: 1 / -1;
             background: rgba(15, 23, 42, 0.95);
@@ -293,15 +287,29 @@
             border-radius: 8px;
             margin-bottom: 8px;
             cursor: move;
+        }
+        
+        .block-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 8px;
         }
         
-        .dropped-block.event { border-color: #f59e0b; background: rgba(245, 158, 11, 0.3); }
-        .dropped-block.control { border-color: #10b981; background: rgba(16, 185, 129, 0.3); }
-        .dropped-block.motion { border-color: #3b82f6; background: rgba(59, 130, 246, 0.3); }
-        .dropped-block.looks { border-color: #8b5cf6; background: rgba(139, 92, 246, 0.3); }
+        .block-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .block-edit {
+            background: #3b82f6;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
         
         .block-delete {
             background: #ef4444;
@@ -312,6 +320,62 @@
             cursor: pointer;
             font-size: 11px;
         }
+        
+        .block-code-editor {
+            display: none;
+            margin-top: 10px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 6px;
+            padding: 10px;
+        }
+        
+        .block-code-editor.active {
+            display: block;
+        }
+        
+        .code-editor-textarea {
+            width: 100%;
+            min-height: 100px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 4px;
+            color: #10b981;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 10px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+        
+        .code-editor-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .btn-save {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-cancel {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        .dropped-block.event { border-color: #f59e0b; background: rgba(245, 158, 11, 0.3); }
+        .dropped-block.control { border-color: #10b981; background: rgba(16, 185, 129, 0.3); }
+        .dropped-block.motion { border-color: #3b82f6; background: rgba(59, 130, 246, 0.3); }
+        .dropped-block.looks { border-color: #8b5cf6; background: rgba(139, 92, 246, 0.3); }
         
         .code-output {
             width: 300px;
@@ -359,10 +423,11 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.5);
             z-index: 2000;
             justify-content: center;
             align-items: center;
+            pointer-events: none;
         }
         
         .modal.active {
@@ -371,22 +436,91 @@
         
         .modal-content {
             background: #1e293b;
-            padding: 30px;
-            border-radius: 16px;
-            max-width: 500px;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 400px;
             width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            pointer-events: all;
+        }
+        
+        /* Modal de ejecución - posicionado arriba de propiedades */
+        #runModal {
+            background: transparent;
+            justify-content: flex-end;
+            align-items: flex-start;
+            padding: 80px 20px 20px 0;
+        }
+        
+        #runModal .modal-content {
+            max-width: 330px;
+            animation: slideInFromRight 0.3s ease;
+        }
+        
+        /* Modales de importar/guardar - centrados pero más pequeños */
+        #importModal .modal-content,
+        #saveModal .modal-content {
+            max-width: 450px;
+            animation: scaleIn 0.3s ease;
+        }
+        
+        @keyframes slideInFromRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
         
         .modal-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             color: #fbbf24;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.6);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .modal-close:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
         }
         
         .modal-text {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             line-height: 1.6;
+            font-size: 14px;
         }
         
         .modal-actions {
@@ -398,10 +532,9 @@
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
         <div class="header">
             <div class="logo">
-                🎨 Simulador 3D + Programación
+                🎨 Simulador 3D + Programación JS
             </div>
             <div class="header-actions">
                 <button class="btn btn-secondary" onclick="clearAll()">🗑️ Limpiar</button>
@@ -411,7 +544,6 @@
             </div>
         </div>
         
-        <!-- Panel de herramientas -->
         <div class="tools-panel">
             <div class="panel-section">
                 <div class="section-title">🔧 Herramientas</div>
@@ -484,7 +616,6 @@
             </div>
         </div>
         
-        <!-- Canvas 3D -->
         <div class="canvas-area">
             <div id="canvas3d"></div>
             <div class="canvas-controls">
@@ -497,7 +628,6 @@
             </div>
         </div>
         
-        <!-- Panel de propiedades -->
         <div class="properties-panel">
             <div class="section-title">⚙️ Propiedades</div>
             <div id="properties-content">
@@ -507,7 +637,6 @@
             </div>
         </div>
         
-        <!-- Panel de programación -->
         <div class="programming-panel">
             <div class="blocks-palette">
                 <div class="block-category">
@@ -573,41 +702,70 @@
                         Ocultar
                     </div>
                 </div>
+                
+                <div class="block-category">
+                    <div class="category-title">💥 Física y Efectos</div>
+                    <div class="block-item looks" draggable="true" data-block="fragment">
+                        Fragmentar en [20] piezas
+                    </div>
+                    <div class="block-item looks" draggable="true" data-block="fall">
+                        Hacer caer objeto
+                    </div>
+                    <div class="block-item looks" draggable="true" data-block="fallshatter">
+                        Caer y fragmentar [25] piezas
+                    </div>
+                    <div class="block-item looks" draggable="true" data-block="explode">
+                        Explotar objeto
+                    </div>
+                    <div class="block-item looks" draggable="true" data-block="oscillateBlock">
+                        Oscilar en eje [y] amplitud [1]
+                    </div>
+                    <div class="block-item looks" draggable="true" data-block="pulseBlock">
+                        Pulsar velocidad [2]
+                    </div>
+                </div>
             </div>
             
             <div class="workspace" id="workspace">
                 <p style="color: rgba(255,255,255,0.5); text-align: center; padding: 40px;">
-                    Arrastra bloques aquí para programar
+                    Arrastra bloques aquí para programar<br>
+                    <span style="font-size: 11px;">💡 Usa el botón "Editar" para código JavaScript personalizado</span>
                 </p>
             </div>
             
             <div class="code-output">
-                <div class="code-title">💻 Código Generado</div>
+                <div class="code-title">💻 Código JavaScript</div>
                 <div class="code-preview" id="code-preview">// El código aparecerá aquí...</div>
             </div>
         </div>
     </div>
     
-    <!-- Modal de ejecución -->
-    <div class="modal" id="runModal">
+    <div class="modal" id="runModal" onclick="if(event.target === this) closeModal()">
         <div class="modal-content">
-            <div class="modal-title">▶️ Ejecutando Simulación</div>
+            <div class="modal-title">
+                ▶️ Ejecutando Simulación
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
             <div class="modal-text" id="runStatus">
                 Iniciando simulación...
             </div>
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="stopSimulation()">⏹️ Detener</button>
-                <button class="btn btn-primary" onclick="closeModal()">Cerrar</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal de importar -->
-    <div class="modal" id="importModal">
+    <div class="modal" id="importModal" onclick="if(event.target === this) closeImportModal()">
         <div class="modal-content">
-            <div class="modal-title">📂 Importar Proyecto</div>
+            <div class="modal-title">
+                📂 Importar Proyecto
+                <button class="modal-close" onclick="closeImportModal()">×</button>
+            </div>
             <div class="modal-text">
-                <p style="margin-bottom: 15px;">Selecciona un archivo de proyecto (.json) guardado previamente en tu computadora:</p>
+                <p style="margin-bottom: 15px;">Selecciona un archivo de proyecto (.json):</p>
+                <p style="font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 15px;">
+                    ✅ Compatible con proyectos MFC y proyectos 3D estándar
+                </p>
                 <input type="file" id="fileInput" accept=".json" style="
                     width: 100%;
                     padding: 10px;
@@ -627,10 +785,12 @@
         </div>
     </div>
 
-    <!-- Modal de confirmación guardar -->
-    <div class="modal" id="saveModal">
+    <div class="modal" id="saveModal" onclick="if(event.target === this) closeSaveModal()">
         <div class="modal-content">
-            <div class="modal-title">💾 Guardar Proyecto</div>
+            <div class="modal-title">
+                💾 Guardar Proyecto
+                <button class="modal-close" onclick="closeSaveModal()">×</button>
+            </div>
             <div class="modal-text">
                 <p style="margin-bottom: 15px;">Dale un nombre a tu proyecto:</p>
                 <input type="text" id="projectName" class="property-input" placeholder="Mi_Proyecto_3D" value="Mi_Proyecto_3D" style="margin-bottom: 15px;">
@@ -638,7 +798,7 @@
                     <strong>📦 Tu proyecto incluye:</strong><br>
                     • <span id="saveObjectCount">0</span> objetos 3D<br>
                     • <span id="saveBlockCount">0</span> bloques de programación<br>
-                    • Código generado automáticamente<br>
+                    • Código JavaScript personalizado<br>
                     <br>
                     El archivo se descargará a tu carpeta de Descargas
                 </div>
@@ -651,7 +811,6 @@
     </div>
 
     <script>
-        // Variables globales Three.js
         let scene, camera, renderer, raycaster, mouse;
         let objects = [];
         let selectedObject = null;
@@ -660,12 +819,10 @@
         let isMouseDown = false;
         let gridHelper;
         
-        // Variables de programación
         let programBlocks = [];
         let blockCounter = 0;
         let isSimulationRunning = false;
         
-        // Inicializar Three.js
         function initThree() {
             const container = document.getElementById('canvas3d');
             
@@ -686,7 +843,6 @@
             renderer.shadowMap.enabled = true;
             container.appendChild(renderer.domElement);
             
-            // Luces
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
             scene.add(ambientLight);
             
@@ -695,15 +851,12 @@
             directionalLight.castShadow = true;
             scene.add(directionalLight);
             
-            // Grid
             gridHelper = new THREE.GridHelper(20, 20);
             scene.add(gridHelper);
             
-            // Raycaster para selección
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
             
-            // Event listeners
             renderer.domElement.addEventListener('click', onCanvasClick);
             renderer.domElement.addEventListener('mousedown', onMouseDown);
             renderer.domElement.addEventListener('mousemove', onMouseMove);
@@ -713,23 +866,385 @@
             animate();
         }
         
-        // Animación
         function animate() {
             requestAnimationFrame(animate);
             
-            // Auto-rotar objetos en simulación
-            if (isSimulationRunning) {
-                objects.forEach(obj => {
-                    if (obj.userData.animate) {
-                        obj.rotation.y += 0.02;
+            // Sistema de animación continua basado en estados
+            objects.forEach(obj => {
+                // Auto-rotación básica
+                if (obj.userData.animate) {
+                    obj.rotation.y += 0.02;
+                }
+                
+                // Sistema de rotación configurable
+                if (obj.userData.autoRotate) {
+                    obj.rotation.y += obj.userData.rotateSpeed || 0.01;
+                    
+                    // Contador de vueltas
+                    if (obj.rotation.y >= Math.PI * 2) {
+                        obj.rotation.y = 0;
+                        obj.userData.turns = (obj.userData.turns || 0) + 1;
                     }
-                });
-            }
+                }
+                
+                // Movimiento continuo en X, Y, Z
+                if (obj.userData.moveX) {
+                    obj.position.x += obj.userData.moveSpeedX || 0.01;
+                }
+                if (obj.userData.moveY) {
+                    obj.position.y += obj.userData.moveSpeedY || 0.01;
+                }
+                if (obj.userData.moveZ) {
+                    obj.position.z += obj.userData.moveSpeedZ || 0.01;
+                }
+                
+                // Sistema de física para caída y fragmentación
+                if (obj.userData.falling) {
+                    // Aplicar gravedad
+                    obj.userData.velocityY = (obj.userData.velocityY || 0) - 0.008;
+                    obj.position.y += obj.userData.velocityY;
+                    
+                    // Rotación durante caída
+                    obj.rotation.x += obj.userData.fallRotationX || 0.02;
+                    obj.rotation.z += obj.userData.fallRotationZ || 0.01;
+                    
+                    // Detectar colisión con el suelo
+                    const floorLevel = gridHelper.visible ? 0 : -5;
+                    
+                    if (obj.position.y < floorLevel) {
+                        if (gridHelper.visible) {
+                            // Rebotar en el suelo
+                            obj.position.y = floorLevel;
+                            obj.userData.velocityY *= -0.4; // Rebote con pérdida de energía
+                            
+                            // Detener si la velocidad es muy baja
+                            if (Math.abs(obj.userData.velocityY) < 0.02) {
+                                obj.userData.falling = false;
+                                obj.userData.velocityY = 0;
+                                obj.userData.fallRotationX = 0;
+                                obj.userData.fallRotationZ = 0;
+                                console.log('💥 Objeto impactó el suelo y se detuvo');
+                            }
+                        } else {
+                            // Sin suelo, desaparecer al caer muy bajo
+                            obj.userData.falling = false;
+                            obj.visible = false;
+                            console.log('💥 Objeto cayó al vacío');
+                        }
+                    }
+                }
+                
+                // Sistema de fragmentación
+                if (obj.userData.fragments && obj.userData.fragments.length > 0) {
+                    obj.userData.fragments.forEach(fragment => {
+                        if (fragment.userData.active) {
+                            // Aplicar física a cada fragmento
+                            fragment.userData.velocity = fragment.userData.velocity || {
+                                x: (Math.random() - 0.5) * 0.15,
+                                y: Math.random() * 0.1,
+                                z: (Math.random() - 0.5) * 0.15
+                            };
+                            
+                            // Gravedad
+                            fragment.userData.velocity.y -= 0.01;
+                            
+                            // Aplicar velocidad
+                            fragment.position.x += fragment.userData.velocity.x;
+                            fragment.position.y += fragment.userData.velocity.y;
+                            fragment.position.z += fragment.userData.velocity.z;
+                            
+                            // Rotación aleatoria
+                            fragment.rotation.x += fragment.userData.rotVel.x;
+                            fragment.rotation.y += fragment.userData.rotVel.y;
+                            fragment.rotation.z += fragment.userData.rotVel.z;
+                            
+                            // Colisión con el suelo
+                            const floorLevel = gridHelper.visible ? 0.15 : -10;
+                            
+                            if (fragment.position.y < floorLevel) {
+                                if (gridHelper.visible) {
+                                    // Rebotar en el suelo
+                                    fragment.position.y = floorLevel;
+                                    fragment.userData.velocity.y *= -0.5; // Rebote
+                                    fragment.userData.velocity.x *= 0.95; // Fricción
+                                    fragment.userData.velocity.z *= 0.95; // Fricción
+                                    
+                                    // Reducir rotación con fricción
+                                    fragment.userData.rotVel.x *= 0.98;
+                                    fragment.userData.rotVel.y *= 0.98;
+                                    fragment.userData.rotVel.z *= 0.98;
+                                    
+                                    // Detener si casi no se mueve
+                                    if (Math.abs(fragment.userData.velocity.y) < 0.01 && 
+                                        Math.abs(fragment.userData.velocity.x) < 0.005 &&
+                                        Math.abs(fragment.userData.velocity.z) < 0.005) {
+                                        fragment.userData.velocity = { x: 0, y: 0, z: 0 };
+                                        fragment.userData.rotVel = { x: 0, y: 0, z: 0 };
+                                        // No desactivar, dejar en el suelo
+                                    }
+                                } else {
+                                    // Sin suelo, desaparecer al caer muy bajo
+                                    fragment.userData.active = false;
+                                    fragment.visible = false;
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // Sistema de explosión
+                if (obj.userData.exploding) {
+                    obj.userData.explodeTime = (obj.userData.explodeTime || 0) + 1;
+                    
+                    // Expandir durante 60 frames (1 segundo)
+                    if (obj.userData.explodeTime < 60) {
+                        const scale = 1 + (obj.userData.explodeTime / 60) * 2;
+                        obj.scale.set(scale, scale, scale);
+                        
+                        // Hacer transparente
+                        if (obj.material) {
+                            obj.material.transparent = true;
+                            obj.material.opacity = 1 - (obj.userData.explodeTime / 60);
+                        }
+                    } else {
+                        obj.visible = false;
+                        obj.userData.exploding = false;
+                    }
+                }
+                
+                // Sistema de temporizador por frames
+                if (obj.userData.timerEnabled) {
+                    obj.userData.timerFrames = (obj.userData.timerFrames || 0) + 1;
+                    
+                    // Ejecutar acción cada X frames (60 frames ≈ 1 segundo a 60fps)
+                    if (obj.userData.timerAction && obj.userData.timerFrames >= (obj.userData.timerInterval || 60)) {
+                        obj.userData.timerFrames = 0;
+                        // Trigger para acciones periódicas
+                        if (obj.userData.timerCallback) {
+                            obj.userData.timerCallback(obj);
+                        }
+                    }
+                }
+                
+                // Animación de bacterias (para celdas MFC)
+                if (obj.userData.animateBacteria && obj.type === 'Group') {
+                    obj.traverse(child => {
+                        if (child.geometry && child.geometry.type === 'SphereGeometry') {
+                            // Inicializar velocidad si no existe
+                            if (!child.userData.velocity) {
+                                child.userData.velocity = {
+                                    x: (Math.random() - 0.5) * 0.03,
+                                    y: (Math.random() - 0.5) * 0.03,
+                                    z: (Math.random() - 0.5) * 0.03
+                                };
+                            }
+                            
+                            // Mover bacteria
+                            child.position.x += child.userData.velocity.x;
+                            child.position.y += child.userData.velocity.y;
+                            child.position.z += child.userData.velocity.z;
+                            
+                            // Rebotar en límites
+                            if (Math.abs(child.position.x) > 1.2) {
+                                child.userData.velocity.x *= -1;
+                            }
+                            if (Math.abs(child.position.y) > 1.8) {
+                                child.userData.velocity.y *= -1;
+                            }
+                            if (Math.abs(child.position.z) > 1.2) {
+                                child.userData.velocity.z *= -1;
+                            }
+                            
+                            // Brillo aleatorio
+                            if (child.material && child.material.emissive) {
+                                child.material.emissiveIntensity = 0.3 + Math.sin(Date.now() * 0.005) * 0.3;
+                            }
+                        }
+                    });
+                }
+                
+                // Sistema de oscilación (onda senoidal)
+                if (obj.userData.oscillate) {
+                    const time = Date.now() * 0.001;
+                    const amplitude = obj.userData.oscillateAmplitude || 1;
+                    const frequency = obj.userData.oscillateFrequency || 1;
+                    
+                    if (obj.userData.oscillateAxis === 'x') {
+                        obj.position.x = obj.userData.oscillateCenter + Math.sin(time * frequency) * amplitude;
+                    } else if (obj.userData.oscillateAxis === 'y') {
+                        obj.position.y = obj.userData.oscillateCenter + Math.sin(time * frequency) * amplitude;
+                    } else if (obj.userData.oscillateAxis === 'z') {
+                        obj.position.z = obj.userData.oscillateCenter + Math.sin(time * frequency) * amplitude;
+                    }
+                }
+                
+                // Sistema de escala pulsante
+                if (obj.userData.pulse) {
+                    const time = Date.now() * 0.001;
+                    const pulseSpeed = obj.userData.pulseSpeed || 2;
+                    const pulseAmount = obj.userData.pulseAmount || 0.2;
+                    const baseScale = obj.userData.baseScale || 1;
+                    
+                    const scale = baseScale + Math.sin(time * pulseSpeed) * pulseAmount;
+                    obj.scale.set(scale, scale, scale);
+                }
+                
+                // Sistema de cambio de color cíclico
+                if (obj.userData.colorCycle && obj.material) {
+                    const time = Date.now() * 0.001;
+                    const speed = obj.userData.colorCycleSpeed || 1;
+                    
+                    const r = Math.sin(time * speed) * 0.5 + 0.5;
+                    const g = Math.sin(time * speed + 2) * 0.5 + 0.5;
+                    const b = Math.sin(time * speed + 4) * 0.5 + 0.5;
+                    
+                    obj.material.color.setRGB(r, g, b);
+                }
+            });
             
             renderer.render(scene, camera);
         }
         
-        // Selección de herramienta
+        // Función para fragmentar objetos
+        function fragmentObject(object, pieces = 12) {
+            console.log(`💥 Fragmentando objeto en ${pieces} piezas...`);
+            
+            // Ocultar objeto original
+            object.visible = false;
+            
+            // Crear fragmentos
+            const fragments = [];
+            const basePosition = object.position.clone();
+            
+            for (let i = 0; i < pieces; i++) {
+                // Crear geometría del fragmento (cubo pequeño)
+                const size = 0.3 + Math.random() * 0.3;
+                const fragmentGeometry = new THREE.BoxGeometry(size, size, size);
+                
+                // Material del fragmento (mismo color que el original o aleatorio)
+                let fragmentColor = 0xff4444;
+                if (object.material && object.material.color) {
+                    fragmentColor = object.material.color.getHex();
+                } else if (object.type === 'Group') {
+                    // Para grupos MFC, usar color amarillo (ánodo)
+                    fragmentColor = 0xfbbf24;
+                }
+                
+                const fragmentMaterial = new THREE.MeshPhongMaterial({
+                    color: fragmentColor,
+                    flatShading: true
+                });
+                
+                const fragment = new THREE.Mesh(fragmentGeometry, fragmentMaterial);
+                
+                // Posicionar fragmento cerca del objeto original
+                fragment.position.set(
+                    basePosition.x + (Math.random() - 0.5) * 2,
+                    basePosition.y + (Math.random() - 0.5) * 2,
+                    basePosition.z + (Math.random() - 0.5) * 2
+                );
+                
+                // Velocidad inicial aleatoria
+                fragment.userData.velocity = {
+                    x: (Math.random() - 0.5) * 0.2,
+                    y: Math.random() * 0.15,
+                    z: (Math.random() - 0.5) * 0.2
+                };
+                
+                // Velocidad de rotación aleatoria
+                fragment.userData.rotVel = {
+                    x: (Math.random() - 0.5) * 0.1,
+                    y: (Math.random() - 0.5) * 0.1,
+                    z: (Math.random() - 0.5) * 0.1
+                };
+                
+                fragment.userData.active = true;
+                fragment.castShadow = true;
+                
+                scene.add(fragment);
+                fragments.push(fragment);
+            }
+            
+            // Guardar fragmentos en el objeto
+            object.userData.fragments = fragments;
+            
+            console.log(`✅ ${pieces} fragmentos creados y cayendo`);
+            
+            return fragments;
+        }
+        
+        // Función para hacer caer un objeto
+        function makeObjectFall(object) {
+            console.log('🌊 Objeto comenzando a caer...');
+            object.userData.falling = true;
+            object.userData.velocityY = 0;
+            object.userData.fallRotationX = (Math.random() - 0.5) * 0.05;
+            object.userData.fallRotationZ = (Math.random() - 0.5) * 0.05;
+        }
+        
+        // Función para explotar un objeto
+        function explodeObject(object) {
+            console.log('💥 Objeto explotando...');
+            object.userData.exploding = true;
+            object.userData.explodeTime = 0;
+        }
+        
+        // Función combinada: caer y fragmentar
+        function fallAndShatter(object, pieces = 12) {
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('💥 SECUENCIA: CAER Y FRAGMENTAR');
+            console.log(`🎯 Objeto: ${object.userData.name || 'desconocido'}`);
+            console.log(`⊞ Grid activo: ${gridHelper.visible ? 'SÍ (hay suelo)' : 'NO (caída al vacío)'}`);
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            
+            // Paso 1: Fragmentar inmediatamente
+            fragmentObject(object, pieces);
+            
+            console.log('✅ Secuencia iniciada');
+        }
+        
+        // Función para limpiar fragmentos del suelo
+        function clearFragments() {
+            let count = 0;
+            objects.forEach(obj => {
+                if (obj.userData.fragments) {
+                    obj.userData.fragments.forEach(fragment => {
+                        scene.remove(fragment);
+                        count++;
+                    });
+                    obj.userData.fragments = [];
+                }
+            });
+            console.log(`🧹 ${count} fragmentos eliminados del suelo`);
+        }
+        
+        // Función para resetear objeto fragmentado
+        function resetObject(object) {
+            if (object.userData.fragments) {
+                object.userData.fragments.forEach(fragment => {
+                    scene.remove(fragment);
+                });
+                object.userData.fragments = [];
+            }
+            object.visible = true;
+            object.userData.falling = false;
+            object.userData.exploding = false;
+            object.userData.velocityY = 0;
+            console.log(`♻️ Objeto "${object.userData.name}" reseteado`);
+        }
+        
+        // Función para activar/desactivar el suelo visualmente
+        function toggleFloor() {
+            const wasVisible = gridHelper.visible;
+            gridHelper.visible = !gridHelper.visible;
+            
+            if (gridHelper.visible) {
+                console.log('⊞ GRID ACTIVADO - Los fragmentos rebotarán en el suelo (y=0)');
+            } else {
+                console.log('⊞ GRID DESACTIVADO - Los fragmentos caerán al vacío');
+            }
+        }
+        
         function selectTool(tool) {
             currentTool = tool;
             document.querySelectorAll('.tool-btn').forEach(btn => {
@@ -738,7 +1253,6 @@
             document.querySelector(`[data-tool="${tool}"]`).classList.add('active');
         }
         
-        // Selección de color
         function selectColor(color) {
             currentColor = color;
             document.querySelectorAll('.color-option').forEach(opt => {
@@ -747,7 +1261,6 @@
             event.target.classList.add('active');
         }
         
-        // Agregar forma
         function addShape(type) {
             let geometry;
             
@@ -798,24 +1311,49 @@
             updateObjectCount();
         }
         
-        // Click en canvas
         function onCanvasClick(event) {
             const rect = renderer.domElement.getBoundingClientRect();
             mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
             mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
             
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(objects);
+            
+            // Intersectar con todos los objetos de la escena (incluye grupos)
+            const allObjects = [];
+            scene.traverse(child => {
+                if (child.isMesh || child.type === 'Group') {
+                    allObjects.push(child);
+                }
+            });
+            
+            const intersects = raycaster.intersectObjects(allObjects, true);
             
             if (intersects.length > 0) {
-                const object = intersects[0].object;
+                let object = intersects[0].object;
+                
+                // Si es parte de un grupo, subir al grupo padre principal
+                while (object.parent && object.parent !== scene) {
+                    // Si el padre está en objects, usar ese
+                    if (objects.includes(object.parent)) {
+                        object = object.parent;
+                        break;
+                    }
+                    object = object.parent;
+                }
+                
+                // Si el objeto clickeado no está en objects pero su padre sí, usar el padre
+                if (!objects.includes(object) && object.parent && objects.includes(object.parent)) {
+                    object = object.parent;
+                }
                 
                 switch(currentTool) {
                     case 'select':
                         selectObject(object);
                         break;
                     case 'paint':
-                        object.material.color.setStyle(currentColor);
+                        if (object.material) {
+                            object.material.color.setStyle(currentColor);
+                        }
                         break;
                     case 'delete':
                         deleteObject(object);
@@ -828,27 +1366,50 @@
             }
         }
         
-        // Seleccionar objeto
         function selectObject(object) {
             if (selectedObject) {
-                selectedObject.material.emissive.setHex(0x000000);
+                if (selectedObject.traverse) {
+                    selectedObject.traverse(child => {
+                        if (child.material && child.material.emissive) {
+                            child.material.emissive.setHex(0x000000);
+                        }
+                    });
+                } else if (selectedObject.material) {
+                    selectedObject.material.emissive.setHex(0x000000);
+                }
             }
             
             selectedObject = object;
-            selectedObject.material.emissive.setHex(0x555555);
+            
+            if (selectedObject.traverse) {
+                selectedObject.traverse(child => {
+                    if (child.material && child.material.emissive) {
+                        child.material.emissive.setHex(0x555555);
+                    }
+                });
+            } else if (selectedObject.material) {
+                selectedObject.material.emissive.setHex(0x555555);
+            }
+            
             updatePropertiesPanel();
         }
         
-        // Deseleccionar objeto
         function deselectObject() {
             if (selectedObject) {
-                selectedObject.material.emissive.setHex(0x000000);
+                if (selectedObject.traverse) {
+                    selectedObject.traverse(child => {
+                        if (child.material && child.material.emissive) {
+                            child.material.emissive.setHex(0x000000);
+                        }
+                    });
+                } else if (selectedObject.material) {
+                    selectedObject.material.emissive.setHex(0x000000);
+                }
                 selectedObject = null;
                 clearPropertiesPanel();
             }
         }
         
-        // Eliminar objeto
         function deleteObject(object) {
             scene.remove(object);
             objects = objects.filter(obj => obj !== object);
@@ -858,16 +1419,26 @@
             updateObjectCount();
         }
         
-        // Actualizar panel de propiedades
         function updatePropertiesPanel() {
             if (!selectedObject) return;
             
             const props = document.getElementById('properties-content');
+            const objType = selectedObject.userData.type || 'desconocido';
+            const objName = selectedObject.userData.name || 'Sin nombre';
+            
             props.innerHTML = `
                 <div class="property-item">
                     <div class="property-label">Nombre</div>
-                    <input type="text" class="property-input" value="${selectedObject.userData.name}" 
+                    <input type="text" class="property-input" value="${objName}" 
                            onchange="selectedObject.userData.name = this.value">
+                </div>
+                <div class="property-item">
+                    <div class="property-label">Tipo</div>
+                    <input type="text" class="property-input" value="${objType}" disabled>
+                </div>
+                <div class="property-item">
+                    <div class="property-label">ID</div>
+                    <input type="text" class="property-input" value="${selectedObject.userData.id || 'N/A'}" disabled>
                 </div>
                 <div class="property-item">
                     <div class="property-label">Posición X</div>
@@ -890,19 +1461,25 @@
                            onchange="selectedObject.scale.set(parseFloat(this.value), parseFloat(this.value), parseFloat(this.value))">
                 </div>
                 <div class="property-item">
-                    <div class="property-label">Rotación Y</div>
+                    <div class="property-label">Rotación Y (grados)</div>
                     <input type="number" class="property-input" step="5" value="${Math.round(selectedObject.rotation.y * 180 / Math.PI)}" 
                            onchange="selectedObject.rotation.y = parseFloat(this.value) * Math.PI / 180">
                 </div>
+                ${selectedObject.material && selectedObject.material.color ? `
                 <div class="property-item">
                     <div class="property-label">Color</div>
                     <input type="color" class="property-input" value="${'#' + selectedObject.material.color.getHexString()}" 
                            onchange="selectedObject.material.color.setStyle(this.value)">
                 </div>
+                ` : ''}
+                <div class="property-item">
+                    <div class="property-label" style="color: #10b981; margin-top: 15px;">
+                        ${objects.includes(selectedObject) ? '✅ Objeto programable' : '⚠️ No está en lista de objetos'}
+                    </div>
+                </div>
             `;
         }
         
-        // Limpiar panel de propiedades
         function clearPropertiesPanel() {
             document.getElementById('properties-content').innerHTML = `
                 <p style="color: rgba(255,255,255,0.5); text-align: center; padding: 20px;">
@@ -911,7 +1488,6 @@
             `;
         }
         
-        // Mouse events para manipulación
         let previousMousePosition = { x: 0, y: 0 };
         
         function onMouseDown(event) {
@@ -941,7 +1517,6 @@
                 selectedObject.scale.set(scale, scale, scale);
                 updatePropertiesPanel();
             } else {
-                // Rotar cámara
                 camera.position.x = camera.position.x * Math.cos(deltaX * 0.01) - camera.position.z * Math.sin(deltaX * 0.01);
                 camera.position.z = camera.position.x * Math.sin(deltaX * 0.01) + camera.position.z * Math.cos(deltaX * 0.01);
                 camera.lookAt(0, 0, 0);
@@ -957,7 +1532,6 @@
             isMouseDown = false;
         }
         
-        // Resize
         function onWindowResize() {
             const container = document.getElementById('canvas3d');
             camera.aspect = container.clientWidth / container.clientHeight;
@@ -965,23 +1539,27 @@
             renderer.setSize(container.clientWidth, container.clientHeight);
         }
         
-        // Reset cámara
         function resetCamera() {
             camera.position.set(5, 5, 5);
             camera.lookAt(0, 0, 0);
         }
         
-        // Toggle grid
         function toggleGrid() {
             gridHelper.visible = !gridHelper.visible;
+            
+            if (gridHelper.visible) {
+                console.log('⊞ GRID ACTIVADO - Ahora hay suelo en y=0');
+                console.log('💡 Los fragmentos rebotarán y se quedarán en el suelo');
+            } else {
+                console.log('⊞ GRID DESACTIVADO - Sin suelo');
+                console.log('💡 Los fragmentos caerán al vacío y desaparecerán');
+            }
         }
         
-        // Actualizar contador
         function updateObjectCount() {
             document.getElementById('object-count').textContent = `Objetos: ${objects.length}`;
         }
         
-        // Limpiar todo
         function clearAll() {
             if (confirm('¿Estás seguro de eliminar todos los objetos y bloques?')) {
                 objects.forEach(obj => scene.remove(obj));
@@ -994,9 +1572,6 @@
             }
         }
         
-        // SISTEMA DE PROGRAMACIÓN POR BLOQUES
-        
-        // Setup drag and drop
         document.addEventListener('DOMContentLoaded', () => {
             initThree();
             setupDragAndDrop();
@@ -1005,7 +1580,6 @@
         function setupDragAndDrop() {
             const workspace = document.getElementById('workspace');
             
-            // Drag start en bloques de paleta
             document.querySelectorAll('.block-item').forEach(block => {
                 block.addEventListener('dragstart', (e) => {
                     e.dataTransfer.effectAllowed = 'copy';
@@ -1017,7 +1591,6 @@
                 });
             });
             
-            // Drop en workspace
             workspace.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'copy';
@@ -1033,14 +1606,14 @@
             });
         }
         
-        // Agregar bloque al workspace
         function addBlockToWorkspace(type, text, category) {
             const block = {
                 id: blockCounter++,
                 type: type,
                 text: text,
                 category: category,
-                params: extractParams(text)
+                params: extractParams(text),
+                customCode: ''
             };
             
             programBlocks.push(block);
@@ -1048,7 +1621,6 @@
             updateCodePreview();
         }
         
-        // Extraer parámetros del texto
         function extractParams(text) {
             const params = [];
             const matches = text.match(/\[([^\]]+)\]/g);
@@ -1060,14 +1632,14 @@
             return params;
         }
         
-        // Actualizar workspace visual
         function updateWorkspace() {
             const workspace = document.getElementById('workspace');
             
             if (programBlocks.length === 0) {
                 workspace.innerHTML = `
                     <p style="color: rgba(255,255,255,0.5); text-align: center; padding: 40px;">
-                        Arrastra bloques aquí para programar
+                        Arrastra bloques aquí para programar<br>
+                        <span style="font-size: 11px;">💡 Usa el botón "Editar" para código JavaScript personalizado</span>
                     </p>
                 `;
                 return;
@@ -1079,104 +1651,297 @@
                 const blockEl = document.createElement('div');
                 blockEl.className = `dropped-block ${block.category}`;
                 blockEl.innerHTML = `
-                    <span>${block.text}</span>
-                    <button class="block-delete" onclick="removeBlock(${index})">✕</button>
+                    <div class="block-header">
+                        <span>${block.text}</span>
+                        <div class="block-actions">
+                            <button class="block-edit" onclick="toggleCodeEditor(${index})">
+                                ${block.customCode ? '📝 Editado' : '✏️ Editar'}
+                            </button>
+                            <button class="block-delete" onclick="removeBlock(${index})">✕</button>
+                        </div>
+                    </div>
+                    <div class="block-code-editor" id="editor-${index}">
+                        <div style="color: #fbbf24; font-size: 11px; margin-bottom: 8px; font-weight: 600;">
+                            💻 Editor de Configuración JavaScript
+                        </div>
+                        <div style="background: rgba(16, 185, 129, 0.2); padding: 8px; border-radius: 4px; font-size: 10px; margin-bottom: 8px; line-height: 1.4;">
+                            <strong>✅ Configura estados</strong> (se ejecutan en animate())<br>
+                            ❌ NO uses <code>await</code>, <code>sleep()</code> o bucles infinitos
+                        </div>
+                        <textarea class="code-editor-textarea" id="code-${index}" placeholder="// 🎯 CONFIGURAR ANIMACIONES CONTINUAS:
+//
+// 🔄 Rotación automática:
+object.userData.autoRotate = true;
+object.userData.rotateSpeed = 0.05;
+
+// 🦠 Animar bacterias (para MFC):
+object.userData.animateBacteria = true;
+
+// 📍 Movimiento continuo:
+object.userData.moveX = true;
+object.userData.moveSpeedX = 0.02;
+
+// 🌊 Oscilar arriba/abajo:
+object.userData.oscillate = true;
+object.userData.oscillateAxis = 'y';
+object.userData.oscillateAmplitude = 1;
+object.userData.oscillateCenter = object.position.y;
+
+// 💓 Pulsar (cambiar tamaño):
+object.userData.pulse = true;
+object.userData.pulseSpeed = 2;
+object.userData.baseScale = 1;
+
+// 🌈 Ciclo de colores:
+object.userData.colorCycle = true;
+
+// Variables: object, objects, scene, camera
+console.log('Objeto configurado:', object.userData.name);">${block.customCode || getDefaultCode(block.type, block.params)}</textarea>
+                        <div class="code-editor-actions">
+                            <button class="btn-small btn-save" onclick="saveBlockCode(${index})">💾 Guardar</button>
+                            <button class="btn-small btn-cancel" onclick="cancelEditCode(${index})">❌ Cancelar</button>
+                        </div>
+                    </div>
                 `;
                 workspace.appendChild(blockEl);
             });
         }
         
-        // Remover bloque
+        function getDefaultCode(type, params) {
+            switch(type) {
+                case 'moveX':
+                    return `// Configurar movimiento continuo en X
+object.userData.moveX = true;
+object.userData.moveSpeedX = ${parseFloat(params[0]) / 100};
+console.log('✅ Movimiento X activado');`;
+                
+                case 'moveY':
+                    return `// Configurar movimiento continuo en Y
+object.userData.moveY = true;
+object.userData.moveSpeedY = ${parseFloat(params[0]) / 100};
+console.log('✅ Movimiento Y activado');`;
+                
+                case 'moveZ':
+                    return `// Configurar movimiento continuo en Z
+object.userData.moveZ = true;
+object.userData.moveSpeedZ = ${parseFloat(params[0]) / 100};
+console.log('✅ Movimiento Z activado');`;
+                
+                case 'rotate':
+                    return `// Configurar rotación continua
+object.userData.autoRotate = true;
+object.userData.rotateSpeed = ${parseFloat(params[0]) * Math.PI / 180};
+object.userData.turns = 0;
+console.log('🔄 Auto-rotación activada');`;
+                
+                case 'goto':
+                    return `// Mover a posición específica
+object.position.set(${params[0]}, ${params[1]}, ${params[2]});
+console.log('📍 Movido a posición:', object.position);`;
+                
+                case 'color':
+                    const colorMap = {
+                        'rojo': '#ef4444',
+                        'azul': '#3b82f6',
+                        'verde': '#10b981',
+                        'amarillo': '#fbbf24'
+                    };
+                    return `// Cambiar color
+if (object.material) {
+    object.material.color.setStyle('${colorMap[params[0]] || '#ffffff'}');
+    console.log('🎨 Color cambiado a ${params[0]}');
+}`;
+                
+                case 'size':
+                    const scale = parseInt(params[0]) / 100;
+                    return `// Cambiar tamaño
+object.scale.set(${scale}, ${scale}, ${scale});
+object.userData.baseScale = ${scale};
+console.log('📏 Escala cambiada a ${params[0]}%');`;
+                
+                case 'show':
+                    return `// Mostrar objeto
+object.visible = true;
+console.log('👁️ Objeto visible');`;
+                
+                case 'hide':
+                    return `// Ocultar objeto
+object.visible = false;
+console.log('🙈 Objeto oculto');`;
+                
+                case 'fragment':
+                    return `// 💥 Fragmentar en piezas
+fragmentObject(object, ${params[0] || 20});
+console.log('💥 Objeto fragmentado en ${params[0] || 20} piezas');`;
+                
+                case 'fall':
+                    return `// 🌊 Hacer caer con gravedad
+makeObjectFall(object);
+console.log('🌊 Objeto cayendo');`;
+                
+                case 'fallshatter':
+                    return `// 💥 Caer y fragmentar
+fallAndShatter(object, ${params[0] || 25});
+console.log('💥 Objeto cayendo y fragmentándose en ${params[0] || 25} piezas');`;
+                
+                case 'explode':
+                    return `// 💥 Explosión
+explodeObject(object);
+console.log('💥 Objeto explotando');`;
+                
+                case 'oscillateBlock':
+                    return `// 🌊 Oscilar
+object.userData.oscillate = true;
+object.userData.oscillateAxis = '${params[0] || 'y'}';
+object.userData.oscillateAmplitude = ${params[1] || 1};
+object.userData.oscillateFrequency = 1;
+object.userData.oscillateCenter = object.position.${params[0] || 'y'};
+console.log('🌊 Oscilación activada en eje ${params[0] || 'y'}');`;
+                
+                case 'pulseBlock':
+                    return `// 💓 Pulsar (cambiar tamaño)
+object.userData.pulse = true;
+object.userData.pulseSpeed = ${params[0] || 2};
+object.userData.pulseAmount = 0.3;
+object.userData.baseScale = object.scale.x;
+console.log('💓 Pulso activado a velocidad ${params[0] || 2}');`;
+                
+                case 'wait':
+                    return `// ⚠️ NOTA: wait() no funciona aquí
+// Usa un temporizador por frames:
+object.userData.timerEnabled = true;
+object.userData.timerInterval = ${parseFloat(params[0]) * 60}; // frames
+console.log('⏱️ Temporizador configurado: ${params[0]}s');`;
+                
+                case 'start':
+                    return `// Evento: Al iniciar
+console.log('▶️ Programa iniciado');`;
+                
+                case 'click':
+                    return `// Evento: Al hacer clic
+// Activar animación de bacterias (para celdas MFC)
+if (object.type === 'Group') {
+    object.userData.animateBacteria = true;
+    console.log('🦠 Bacterias activadas');
+} else {
+    object.userData.autoRotate = true;
+    object.userData.rotateSpeed = 0.05;
+    console.log('🔄 Rotación activada por clic');
+}`;
+                
+                case 'repeat':
+                    return `// ⚠️ NOTA: Los bucles no funcionan aquí
+// En su lugar, configura estados:
+object.userData.repeatCount = ${params[0]};
+object.userData.currentRepeat = 0;
+console.log('🔁 Repeticiones configuradas: ${params[0]}');`;
+                
+                case 'forever':
+                    return `// Activar animación continua
+object.userData.autoRotate = true;
+object.userData.rotateSpeed = 0.02;
+console.log('♾️ Animación continua activada');`;
+                
+                default:
+                    return `// Código personalizado
+// Variables disponibles: object, objects, scene, camera
+// Funciones: fragmentObject(), makeObjectFall(), explodeObject(), fallAndShatter()
+// 
+// 🎯 EJEMPLOS DE CONFIGURACIÓN:
+//
+// 🔄 Rotar continuamente:
+// object.userData.autoRotate = true;
+// object.userData.rotateSpeed = 0.05;
+//
+// 🦠 Animar bacterias (MFC):
+// object.userData.animateBacteria = true;
+//
+// 📍 Mover:
+// object.userData.moveX = true;
+// object.userData.moveSpeedX = 0.02;
+//
+// 🌊 Oscilar:
+// object.userData.oscillate = true;
+// object.userData.oscillateAxis = 'y';
+// object.userData.oscillateAmplitude = 1;
+// object.userData.oscillateCenter = object.position.y;
+//
+// 💓 Pulsar (escala):
+// object.userData.pulse = true;
+// object.userData.pulseSpeed = 2;
+// object.userData.baseScale = 1;
+//
+// 🌈 Color cíclico:
+// object.userData.colorCycle = true;
+// object.userData.colorCycleSpeed = 1;
+//
+// 💥 FÍSICA Y FRAGMENTACIÓN:
+//
+// Caer:
+// makeObjectFall(object);
+//
+// Fragmentar en piezas:
+// fragmentObject(object, 15); // 15 fragmentos
+//
+// Caer Y fragmentar:
+// fallAndShatter(object, 20); // 20 fragmentos
+//
+// Explotar:
+// explodeObject(object);
+
+console.log('⚙️ Configuración aplicada');`;
+            }
+        }
+        
+        function toggleCodeEditor(index) {
+            const editor = document.getElementById(`editor-${index}`);
+            if (editor) {
+                editor.classList.toggle('active');
+            }
+        }
+        
+        function saveBlockCode(index) {
+            const textarea = document.getElementById(`code-${index}`);
+            if (textarea && programBlocks[index]) {
+                programBlocks[index].customCode = textarea.value;
+                updateWorkspace();
+                updateCodePreview();
+            }
+        }
+        
+        function cancelEditCode(index) {
+            const editor = document.getElementById(`editor-${index}`);
+            if (editor) {
+                editor.classList.remove('active');
+            }
+        }
+        
         function removeBlock(index) {
             programBlocks.splice(index, 1);
             updateWorkspace();
             updateCodePreview();
         }
         
-        // Generar código JavaScript
         function updateCodePreview() {
-            let code = '// Código generado automáticamente\n\n';
+            let code = '// Código JavaScript generado\n\n';
             
             if (programBlocks.length === 0) {
                 code = '// El código aparecerá aquí...';
             } else {
-                let indent = 0;
-                
                 programBlocks.forEach(block => {
-                    const indentation = '  '.repeat(indent);
-                    
-                    switch(block.type) {
-                        case 'start':
-                            code += `${indentation}function onStart() {\n`;
-                            indent++;
-                            break;
-                        case 'click':
-                            code += `${indentation}object.onClick = function() {\n`;
-                            indent++;
-                            break;
-                        case 'key':
-                            code += `${indentation}document.addEventListener('keydown', (e) => {\n`;
-                            indent++;
-                            code += `${indentation}  if (e.key === 'space') {\n`;
-                            indent++;
-                            break;
-                        case 'wait':
-                            code += `${indentation}await sleep(${block.params[0]} * 1000);\n`;
-                            break;
-                        case 'repeat':
-                            code += `${indentation}for (let i = 0; i < ${block.params[0]}; i++) {\n`;
-                            indent++;
-                            break;
-                        case 'forever':
-                            code += `${indentation}while (true) {\n`;
-                            indent++;
-                            break;
-                        case 'if':
-                            code += `${indentation}if (condition) {\n`;
-                            indent++;
-                            break;
-                        case 'moveX':
-                            code += `${indentation}object.position.x += ${block.params[0]};\n`;
-                            break;
-                        case 'moveY':
-                            code += `${indentation}object.position.y += ${block.params[0]};\n`;
-                            break;
-                        case 'moveZ':
-                            code += `${indentation}object.position.z += ${block.params[0]};\n`;
-                            break;
-                        case 'rotate':
-                            code += `${indentation}object.rotation.y += ${block.params[0]} * Math.PI / 180;\n`;
-                            break;
-                        case 'goto':
-                            code += `${indentation}object.position.set(${block.params[0]}, ${block.params[1]}, ${block.params[2]});\n`;
-                            break;
-                        case 'color':
-                            code += `${indentation}object.material.color.setStyle('${block.params[0]}');\n`;
-                            break;
-                        case 'size':
-                            const scale = parseInt(block.params[0]) / 100;
-                            code += `${indentation}object.scale.set(${scale}, ${scale}, ${scale});\n`;
-                            break;
-                        case 'show':
-                            code += `${indentation}object.visible = true;\n`;
-                            break;
-                        case 'hide':
-                            code += `${indentation}object.visible = false;\n`;
-                            break;
+                    if (block.customCode && block.customCode.trim()) {
+                        code += '// Bloque: ' + block.text + '\n';
+                        code += block.customCode + '\n\n';
+                    } else {
+                        code += '// Bloque: ' + block.text + '\n';
+                        code += getDefaultCode(block.type, block.params) + '\n\n';
                     }
                 });
-                
-                // Cerrar bloques abiertos
-                while (indent > 0) {
-                    indent--;
-                    code += '  '.repeat(indent) + '}\n';
-                }
             }
             
             document.getElementById('code-preview').textContent = code;
         }
         
-        // Ejecutar simulación
         function runSimulation() {
             if (objects.length === 0) {
                 alert('Agrega objetos 3D primero');
@@ -1189,115 +1954,145 @@
             }
             
             document.getElementById('runModal').classList.add('active');
-            document.getElementById('runStatus').textContent = 'Ejecutando simulación...';
+            document.getElementById('runStatus').innerHTML = `
+                <div style="margin-bottom: 10px;">Ejecutando configuración...</div>
+                <div style="font-size: 12px; color: rgba(255,255,255,0.7);">
+                    Los bloques configuran animaciones continuas.<br>
+                    Las animaciones corren automáticamente en el motor.
+                </div>
+            `;
             
             isSimulationRunning = true;
-            
-            // Ejecutar bloques
             executeBlocks();
             
             setTimeout(() => {
-                document.getElementById('runStatus').textContent = '✅ Simulación completada';
-            }, 2000);
+                document.getElementById('runStatus').innerHTML = `
+                    <div style="color: #10b981; margin-bottom: 10px;">✅ Configuración aplicada</div>
+                    <div style="font-size: 12px; line-height: 1.6;">
+                        Las animaciones están corriendo continuamente.<br>
+                        Puedes cerrar este modal y seguir interactuando.
+                    </div>
+                `;
+            }, 1000);
         }
         
-        // Ejecutar bloques de programa
-        async function executeBlocks() {
-            for (const block of programBlocks) {
-                if (!isSimulationRunning) break;
-                
-                if (objects.length > 0) {
-                    const obj = objects[0]; // Ejecutar en primer objeto
-                    
-                    switch(block.type) {
-                        case 'wait':
-                            await sleep(parseFloat(block.params[0]) * 1000);
-                            break;
-                        case 'moveX':
-                            obj.position.x += parseFloat(block.params[0]);
-                            break;
-                        case 'moveY':
-                            obj.position.y += parseFloat(block.params[0]);
-                            break;
-                        case 'moveZ':
-                            obj.position.z += parseFloat(block.params[0]);
-                            break;
-                        case 'rotate':
-                            obj.rotation.y += parseFloat(block.params[0]) * Math.PI / 180;
-                            break;
-                        case 'color':
-                            const colorMap = {
-                                'rojo': '#ef4444',
-                                'azul': '#3b82f6',
-                                'verde': '#10b981',
-                                'amarillo': '#fbbf24'
-                            };
-                            obj.material.color.setStyle(colorMap[block.params[0]] || '#ffffff');
-                            break;
-                        case 'size':
-                            const scale = parseInt(block.params[0]) / 100;
-                            obj.scale.set(scale, scale, scale);
-                            break;
-                        case 'show':
-                            obj.visible = true;
-                            break;
-                        case 'hide':
-                            obj.visible = false;
-                            break;
-                    }
-                    
-                    obj.userData.animate = true;
-                }
-                
-                await sleep(100);
+        function executeBlocks() {
+            const object = selectedObject || objects[0];
+            
+            if (!object) {
+                console.warn('⚠️ No hay objeto seleccionado para ejecutar');
+                return;
             }
+            
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('▶️ EJECUTANDO BLOQUES');
+            console.log(`🎯 Objeto: ${object.userData.name || 'Sin nombre'}`);
+            console.log(`📦 Total bloques: ${programBlocks.length}`);
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            
+            programBlocks.forEach((block, index) => {
+                try {
+                    console.log(`\n🧩 Bloque ${index + 1}: ${block.text}`);
+                    
+                    if (block.customCode && block.customCode.trim()) {
+                        // Ejecutar código personalizado con funciones de física disponibles
+                        const customFunction = new Function(
+                            'object', 
+                            'objects', 
+                            'scene', 
+                            'camera',
+                            'fragmentObject',
+                            'makeObjectFall',
+                            'explodeObject',
+                            'fallAndShatter',
+                            'clearFragments',
+                            'resetObject',
+                            'gridHelper',
+                            block.customCode
+                        );
+                        customFunction(object, objects, scene, camera, fragmentObject, makeObjectFall, explodeObject, fallAndShatter, clearFragments, resetObject, gridHelper);
+                        console.log('  ✅ Código personalizado ejecutado');
+                    } else {
+                        // Ejecutar código por defecto del bloque
+                        const defaultCode = getDefaultCode(block.type, block.params);
+                        const defaultFunction = new Function(
+                            'object', 
+                            'objects', 
+                            'scene', 
+                            'camera',
+                            'fragmentObject',
+                            'makeObjectFall',
+                            'explodeObject',
+                            'fallAndShatter',
+                            'clearFragments',
+                            'resetObject',
+                            'gridHelper',
+                            defaultCode
+                        );
+                        defaultFunction(object, objects, scene, camera, fragmentObject, makeObjectFall, explodeObject, fallAndShatter, clearFragments, resetObject, gridHelper);
+                        console.log('  ✅ Configuración por defecto aplicada');
+                    }
+                } catch (error) {
+                    console.error(`  ❌ Error en bloque "${block.text}":`, error.message);
+                    alert(`Error en bloque "${block.text}":\n${error.message}\n\nRevisa la consola (F12) para más detalles.`);
+                }
+            });
+            
+            console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('✅ TODOS LOS BLOQUES EJECUTADOS');
+            console.log('🎬 Las animaciones corren automáticamente');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+            
+            // Mostrar estado del objeto
+            console.log('📊 ESTADO DEL OBJETO:', object.userData);
         }
         
-        // Helper sleep
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-        
-        // Detener simulación
         function stopSimulation() {
             isSimulationRunning = false;
-            objects.forEach(obj => obj.userData.animate = false);
+            
+            // Detener todas las animaciones
+            objects.forEach(obj => {
+                obj.userData.animate = false;
+                obj.userData.autoRotate = false;
+                obj.userData.moveX = false;
+                obj.userData.moveY = false;
+                obj.userData.moveZ = false;
+                obj.userData.animateBacteria = false;
+                obj.userData.oscillate = false;
+                obj.userData.pulse = false;
+                obj.userData.colorCycle = false;
+            });
+            
+            console.log('⏹️ Todas las animaciones detenidas');
             closeModal();
         }
         
-        // Cerrar modal
         function closeModal() {
             document.getElementById('runModal').classList.remove('active');
         }
         
-        // SISTEMA DE GUARDAR E IMPORTAR
-        
-        // Guardar proyecto
         function saveProject() {
             if (objects.length === 0) {
                 alert('⚠️ No hay objetos para guardar. Crea algunos objetos 3D primero.');
                 return;
             }
             
-            // Actualizar contadores en el modal
             document.getElementById('saveObjectCount').textContent = objects.length;
             document.getElementById('saveBlockCount').textContent = programBlocks.length;
             
-            // Mostrar modal de guardar
             document.getElementById('saveModal').classList.add('active');
             
-            // Generar nombre con fecha
             const now = new Date();
             const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
             document.getElementById('projectName').value = `Proyecto_3D_${dateStr}`;
         }
         
-        // Confirmar y descargar proyecto
         function confirmSaveProject() {
             const projectName = document.getElementById('projectName').value || 'Proyecto_3D';
             
             const project = {
-                version: '1.0',
+                version: '2.0',
+                type: '3D_Project',
                 name: projectName,
                 createdAt: new Date().toISOString(),
                 objects: objects.map(obj => ({
@@ -1332,12 +2127,10 @@
                 }
             };
             
-            // Crear archivo JSON
             const dataStr = JSON.stringify(project, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             
-            // Descargar archivo
             const a = document.createElement('a');
             a.href = url;
             a.download = `${projectName}.json`;
@@ -1346,26 +2139,20 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            // Cerrar modal y mostrar confirmación
             closeSaveModal();
-            
-            // Mostrar notificación
             showNotification('✅ Proyecto guardado correctamente en tu carpeta de Descargas', 'success');
         }
         
-        // Cerrar modal de guardar
         function closeSaveModal() {
             document.getElementById('saveModal').classList.remove('active');
         }
         
-        // Importar proyecto
         function importProject() {
             document.getElementById('importModal').classList.add('active');
             document.getElementById('importStatus').textContent = '';
             document.getElementById('fileInput').value = '';
         }
         
-        // Cargar archivo seleccionado
         function loadSelectedFile() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
@@ -1388,10 +2175,12 @@
                 try {
                     const project = JSON.parse(e.target.result);
                     
-                    // Validar estructura del proyecto
                     if (!project.objects || !Array.isArray(project.objects)) {
                         throw new Error('Formato de proyecto inválido');
                     }
+                    
+                    const projectType = project.type || 'Unknown';
+                    const isMFCProject = projectType === 'MFC_Project';
                     
                     // Limpiar escena actual
                     objects.forEach(obj => scene.remove(obj));
@@ -1399,18 +2188,27 @@
                     programBlocks = [];
                     deselectObject();
                     
+                    console.log(`📂 Cargando proyecto: ${project.name || 'Sin nombre'}`);
+                    console.log(`📦 Tipo: ${projectType}`);
+                    console.log(`🔢 Objetos a cargar: ${project.objects.length}`);
+                    
                     // Cargar objetos
-                    project.objects.forEach(objData => {
-                        loadObject(objData);
+                    project.objects.forEach((objData, index) => {
+                        console.log(`  ⚙️ Cargando objeto ${index + 1}/${project.objects.length}: ${objData.name || objData.type}`);
+                        loadObject(objData, isMFCProject);
                     });
                     
-                    // Cargar bloques de programación
+                    console.log(`✅ Total de objetos cargados: ${objects.length}`);
+                    console.log('📋 Lista de objetos:', objects.map(o => o.userData.name || o.userData.type));
+                    
+                    // Cargar bloques
                     if (project.blocks && Array.isArray(project.blocks)) {
                         programBlocks = project.blocks;
                         blockCounter = Math.max(...programBlocks.map(b => b.id), 0) + 1;
+                        console.log(`🧩 Bloques cargados: ${programBlocks.length}`);
                     }
                     
-                    // Restaurar posición de cámara
+                    // Restaurar cámara
                     if (project.cameraPosition) {
                         camera.position.set(
                             project.cameraPosition.x,
@@ -1420,20 +2218,25 @@
                         camera.lookAt(0, 0, 0);
                     }
                     
-                    // Actualizar UI
                     updateObjectCount();
                     updateWorkspace();
                     updateCodePreview();
                     
-                    // Cerrar modal
                     closeImportModal();
                     
-                    // Mostrar notificación
-                    showNotification(`✅ Proyecto "${project.name || 'Sin nombre'}" cargado correctamente`, 'success');
+                    const typeMsg = isMFCProject ? '(Proyecto MFC convertido)' : '(Proyecto 3D estándar)';
+                    showNotification(`✅ Proyecto "${project.name || 'Sin nombre'}" cargado ${typeMsg}`, 'success');
+                    
+                    // Mostrar resumen en consola
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                    console.log('✅ PROYECTO CARGADO EXITOSAMENTE');
+                    console.log(`📦 Objetos: ${objects.length}`);
+                    console.log(`🧩 Bloques: ${programBlocks.length}`);
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
                     
                 } catch (error) {
-                    console.error('Error al cargar proyecto:', error);
-                    document.getElementById('importStatus').innerHTML = '❌ Error: Archivo corrupto o formato incorrecto';
+                    console.error('❌ Error al cargar proyecto:', error);
+                    document.getElementById('importStatus').innerHTML = '❌ Error: ' + error.message;
                     document.getElementById('importStatus').style.color = '#ef4444';
                 }
             };
@@ -1446,40 +2249,157 @@
             reader.readAsText(file);
         }
         
-        // Cargar un objeto desde datos guardados
-        function loadObject(objData) {
-            let geometry;
+        function createMFCChamber(type, color, position) {
+            const group = new THREE.Group();
             
-            switch(objData.type) {
-                case 'box':
-                    geometry = new THREE.BoxGeometry(1, 1, 1);
-                    break;
-                case 'sphere':
-                    geometry = new THREE.SphereGeometry(0.5, 32, 32);
-                    break;
-                case 'cylinder':
-                    geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
-                    break;
-                case 'cone':
-                    geometry = new THREE.ConeGeometry(0.5, 1, 32);
-                    break;
-                case 'torus':
-                    geometry = new THREE.TorusGeometry(0.5, 0.2, 16, 100);
-                    break;
-                case 'plane':
-                    geometry = new THREE.PlaneGeometry(2, 2);
-                    break;
-                default:
-                    geometry = new THREE.BoxGeometry(1, 1, 1);
+            // Cámara transparente
+            const chamberGeometry = new THREE.BoxGeometry(3, 4, 3);
+            const chamberMaterial = new THREE.MeshPhongMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+            const chamber = new THREE.Mesh(chamberGeometry, chamberMaterial);
+            group.add(chamber);
+            
+            // Electrodo
+            const electrodeGeometry = new THREE.CylinderGeometry(0.3, 0.3, 3.5, 16);
+            const electrodeMaterial = new THREE.MeshPhongMaterial({ 
+                color: type === 'anode' ? 0x2c2c2c : 0x757575,
+                emissive: 0x111111
+            });
+            const electrode = new THREE.Mesh(electrodeGeometry, electrodeMaterial);
+            group.add(electrode);
+            
+            // Partículas decorativas si es ánodo
+            if (type === 'anode') {
+                for (let i = 0; i < 10; i++) {
+                    const particleGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+                    const particleMaterial = new THREE.MeshPhongMaterial({
+                        color: 0xff1744,
+                        emissive: 0xff0000,
+                        emissiveIntensity: 0.3
+                    });
+                    const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                    particle.position.set(
+                        (Math.random() - 0.5) * 2,
+                        (Math.random() - 0.5) * 3,
+                        (Math.random() - 0.5) * 2
+                    );
+                    group.add(particle);
+                }
             }
             
-            const material = new THREE.MeshPhongMaterial({ 
-                color: objData.color || '#ef4444',
-                flatShading: false
-            });
-            const mesh = new THREE.Mesh(geometry, material);
+            group.position.copy(position);
+            return group;
+        }
+        
+        function loadObject(objData, isMFCProject) {
+            let mesh;
             
-            // Restaurar propiedades
+            if (isMFCProject && objData.isMFC) {
+                // Recrear celda MFC completa
+                const mfcGroup = new THREE.Group();
+                
+                // Ánodo (amarillo, izquierda)
+                const anode = createMFCChamber('anode', 0xfbbf24, new THREE.Vector3(-2.5, 0, 0));
+                mfcGroup.add(anode);
+                
+                // Membrana (verde, centro)
+                const membraneGeometry = new THREE.BoxGeometry(0.15, 4, 3);
+                const membraneMaterial = new THREE.MeshPhongMaterial({
+                    color: 0x10b981,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const membrane = new THREE.Mesh(membraneGeometry, membraneMaterial);
+                membrane.position.set(0, 0, 0);
+                mfcGroup.add(membrane);
+                
+                // Cátodo (azul, derecha)
+                const cathode = createMFCChamber('cathode', 0x60a5fa, new THREE.Vector3(2.5, 0, 0));
+                mfcGroup.add(cathode);
+                
+                // Aplicar transformaciones al grupo completo
+                mfcGroup.position.set(objData.position.x, objData.position.y, objData.position.z);
+                mfcGroup.rotation.set(objData.rotation.x, objData.rotation.y, objData.rotation.z);
+                mfcGroup.scale.set(objData.scale.x, objData.scale.y, objData.scale.z);
+                
+                mfcGroup.userData = {
+                    id: objData.id || Date.now(),
+                    type: 'mfc',
+                    name: objData.name || 'Celda_MFC_' + (objects.length + 1),
+                    animate: objData.userData ? objData.userData.animate : false
+                };
+                
+                scene.add(mfcGroup);
+                objects.push(mfcGroup);
+                return;
+            }
+            
+            if (isMFCProject) {
+                // Componentes individuales MFC
+                let geometry, material;
+                
+                switch(objData.type) {
+                    case 'anode':
+                        mesh = createMFCChamber('anode', 0xfbbf24, new THREE.Vector3(0, 0, 0));
+                        break;
+                    case 'cathode':
+                        mesh = createMFCChamber('cathode', 0x60a5fa, new THREE.Vector3(0, 0, 0));
+                        break;
+                    case 'membrane':
+                        geometry = new THREE.BoxGeometry(0.15, 4, 3);
+                        material = new THREE.MeshPhongMaterial({
+                            color: 0x10b981,
+                            transparent: true,
+                            opacity: 0.6
+                        });
+                        mesh = new THREE.Mesh(geometry, material);
+                        break;
+                    default:
+                        geometry = new THREE.BoxGeometry(1, 1, 1);
+                        material = new THREE.MeshPhongMaterial({ 
+                            color: objData.color || '#ef4444'
+                        });
+                        mesh = new THREE.Mesh(geometry, material);
+                }
+            } else {
+                // Objetos 3D estándar
+                let geometry;
+                
+                switch(objData.type) {
+                    case 'box':
+                        geometry = new THREE.BoxGeometry(1, 1, 1);
+                        break;
+                    case 'sphere':
+                        geometry = new THREE.SphereGeometry(0.5, 32, 32);
+                        break;
+                    case 'cylinder':
+                        geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
+                        break;
+                    case 'cone':
+                        geometry = new THREE.ConeGeometry(0.5, 1, 32);
+                        break;
+                    case 'torus':
+                        geometry = new THREE.TorusGeometry(0.5, 0.2, 16, 100);
+                        break;
+                    case 'plane':
+                        geometry = new THREE.PlaneGeometry(2, 2);
+                        break;
+                    default:
+                        geometry = new THREE.BoxGeometry(1, 1, 1);
+                }
+                
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: objData.color || '#ef4444',
+                    flatShading: false
+                });
+                mesh = new THREE.Mesh(geometry, material);
+            }
+            
+            // Aplicar propiedades
             mesh.position.set(objData.position.x, objData.position.y, objData.position.z);
             mesh.rotation.set(objData.rotation.x, objData.rotation.y, objData.rotation.z);
             mesh.scale.set(objData.scale.x, objData.scale.y, objData.scale.z);
@@ -1498,12 +2418,10 @@
             objects.push(mesh);
         }
         
-        // Cerrar modal de importar
         function closeImportModal() {
             document.getElementById('importModal').classList.remove('active');
         }
         
-        // Mostrar notificación temporal
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
             notification.style.cssText = `
@@ -1523,7 +2441,6 @@
             `;
             notification.textContent = message;
             
-            // Agregar animación
             const style = document.createElement('style');
             style.textContent = `
                 @keyframes slideIn {
@@ -1551,16 +2468,10 @@
             
             document.body.appendChild(notification);
             
-            // Remover después de 3 segundos
             setTimeout(() => {
                 notification.style.animation = 'slideOut 0.3s ease';
                 setTimeout(() => notification.remove(), 300);
             }, 3000);
-        }
-        
-        // Exportar proyecto (función legacy, ahora usa saveProject)
-        function exportProject() {
-            saveProject();
         }
     </script>
 </body>
