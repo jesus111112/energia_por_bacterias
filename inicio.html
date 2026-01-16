@@ -179,6 +179,69 @@
       
       .projects-container {
         grid-template-columns: 1fr;
+        padding: 10px;
+        gap: 15px;
+      }
+
+      .project-card {
+        padding: 20px;
+      }
+
+      .project-card h2 {
+        font-size: 1.3rem;
+      }
+
+      header {
+        padding: 20px 15px;
+        margin-bottom: 20px;
+      }
+
+      footer {
+        padding: 20px;
+        margin-top: 30px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      header h1 {
+        font-size: 1.2rem;
+        line-height: 1.4;
+      }
+
+      header p {
+        font-size: 0.95rem;
+      }
+
+      .project-card {
+        padding: 18px;
+      }
+
+      .project-card h2 {
+        font-size: 1.2rem;
+      }
+
+      .project-card p {
+        font-size: 0.9rem;
+      }
+
+      .main-content {
+        padding: 10px;
+      }
+    }
+
+    /* Mejoras para pantallas táctiles */
+    @media (hover: none) and (pointer: coarse) {
+      .project-card {
+        transition: none;
+      }
+
+      .project-card:active {
+        transform: scale(0.98);
+        border-color: rgba(0, 255, 136, 0.8);
+      }
+
+      .project-card a:active {
+        transform: scale(0.95);
       }
     }
   </style>
@@ -274,8 +337,19 @@
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limitar para mejor rendimiento
     camera.position.z = 5;
+
+    // Ajustar posición de cámara en móviles
+    function adjustCameraForScreen() {
+      if (window.innerWidth < 768) {
+        camera.position.z = 7; // Alejar en móviles para ver mejor
+      } else {
+        camera.position.z = 5;
+      }
+    }
+    
+    adjustCameraForScreen();
 
     // Función para crear una bacteria individual
     function createBacteria() {
@@ -387,33 +461,37 @@
       return bacteriaGroup;
     }
 
-    // Crear 5 bacterias
+    // Crear bacterias con tamaños ajustables
+    const isMobile = window.innerWidth < 768;
+    const scaleMultiplier = isMobile ? 0.7 : 1; // Bacterias más pequeñas en móvil
+
     const bacteria1 = createBacteria(); // Sigue el mouse (centro)
     bacteria1.position.set(0, 0, 0);
+    bacteria1.scale.multiplyScalar(scaleMultiplier);
     scene.add(bacteria1);
 
     const bacteria2 = createBacteria(); // Flotando arriba-derecha
     bacteria2.position.set(4, 3, -2);
     bacteria2.rotation.set(0.5, 0.8, 0.3);
-    bacteria2.scale.set(0.8, 0.8, 0.8);
+    bacteria2.scale.set(0.8 * scaleMultiplier, 0.8 * scaleMultiplier, 0.8 * scaleMultiplier);
     scene.add(bacteria2);
 
     const bacteria3 = createBacteria(); // Flotando abajo-izquierda
     bacteria3.position.set(-4, -2, -3);
     bacteria3.rotation.set(-0.3, 1.2, 0.5);
-    bacteria3.scale.set(0.7, 0.7, 0.7);
+    bacteria3.scale.set(0.7 * scaleMultiplier, 0.7 * scaleMultiplier, 0.7 * scaleMultiplier);
     scene.add(bacteria3);
 
     const bacteria4 = createBacteria(); // Nueva: abajo-derecha
     bacteria4.position.set(5, -3, -2.5);
     bacteria4.rotation.set(0.7, -0.5, 0.8);
-    bacteria4.scale.set(0.65, 0.65, 0.65);
+    bacteria4.scale.set(0.65 * scaleMultiplier, 0.65 * scaleMultiplier, 0.65 * scaleMultiplier);
     scene.add(bacteria4);
 
     const bacteria5 = createBacteria(); // Nueva: arriba-izquierda
     bacteria5.position.set(-5, 3.5, -3);
     bacteria5.rotation.set(-0.6, 0.9, -0.4);
-    bacteria5.scale.set(0.75, 0.75, 0.75);
+    bacteria5.scale.set(0.75 * scaleMultiplier, 0.75 * scaleMultiplier, 0.75 * scaleMultiplier);
     scene.add(bacteria5);
 
     // Iluminación mejorada
@@ -432,19 +510,37 @@
     pointLight3.position.set(0, 5, -5);
     scene.add(pointLight3);
 
-    // Variables para seguimiento del mouse
+    // Variables para seguimiento del mouse y touch
     let mouseX = 0;
     let mouseY = 0;
     let targetRotationX = 0;
     let targetRotationY = 0;
 
-    // Seguir el mouse
+    // Seguir el mouse (desktop)
     document.addEventListener('mousemove', (e) => {
       mouseX = (e.clientX / window.innerWidth) * 2 - 1;
       mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
       
       targetRotationY = mouseX * 0.5;
       targetRotationX = mouseY * 0.3;
+    });
+
+    // Soporte para touch (móviles y tablets)
+    document.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        mouseX = (touch.clientX / window.innerWidth) * 2 - 1;
+        mouseY = -(touch.clientY / window.innerHeight) * 2 + 1;
+        
+        targetRotationY = mouseX * 0.5;
+        targetRotationX = mouseY * 0.3;
+      }
+    }, { passive: true });
+
+    // Reset cuando no hay touch
+    document.addEventListener('touchend', () => {
+      targetRotationX = 0;
+      targetRotationY = 0;
     });
 
     // Animación
@@ -527,6 +623,20 @@
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      
+      // Ajustar cámara y escalas según tamaño de pantalla
+      adjustCameraForScreen();
+      
+      const newIsMobile = window.innerWidth < 768;
+      const newScaleMultiplier = newIsMobile ? 0.7 : 1;
+      
+      // Reajustar escalas de bacterias
+      bacteria1.scale.set(newScaleMultiplier, newScaleMultiplier, newScaleMultiplier);
+      bacteria2.scale.set(0.8 * newScaleMultiplier, 0.8 * newScaleMultiplier, 0.8 * newScaleMultiplier);
+      bacteria3.scale.set(0.7 * newScaleMultiplier, 0.7 * newScaleMultiplier, 0.7 * newScaleMultiplier);
+      bacteria4.scale.set(0.65 * newScaleMultiplier, 0.65 * newScaleMultiplier, 0.65 * newScaleMultiplier);
+      bacteria5.scale.set(0.75 * newScaleMultiplier, 0.75 * newScaleMultiplier, 0.75 * newScaleMultiplier);
     });
 
     // Start screen (opcional)
