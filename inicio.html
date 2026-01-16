@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>index</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 100%);
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* Canvas 3D de fondo */
+    #canvas3d {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* Contenedor principal con z-index mayor */
+    .main-content {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      padding: 40px 20px;
+      background: rgba(15, 20, 40, 0.7);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      margin-bottom: 40px;
+      box-shadow: 0 8px 32px rgba(0, 255, 136, 0.1);
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      margin-bottom: 15px;
+      background: linear-gradient(90deg, #00ff88, #00ccff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      color: #88ccff;
+    }
+
+    .projects-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .project-card {
+      background: rgba(25, 30, 50, 0.8);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(0, 255, 136, 0.3);
+      border-radius: 15px;
+      padding: 25px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .project-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(0, 255, 136, 0.8);
+      box-shadow: 0 8px 30px rgba(0, 255, 136, 0.3);
+    }
+
+    .project-card h2 {
+      color: #00ff88;
+      margin-bottom: 12px;
+      font-size: 1.5rem;
+    }
+
+    .project-card p {
+      color: #aabbcc;
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .project-card a {
+      display: inline-block;
+      padding: 10px 25px;
+      background: linear-gradient(90deg, #00ff88, #00ccff);
+      color: #0a0e27;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .project-card a:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(0, 255, 136, 0.5);
+    }
+
+    footer {
+      text-align: center;
+      padding: 30px;
+      margin-top: 50px;
+      background: rgba(15, 20, 40, 0.7);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      color: #88ccff;
+    }
+
+    /* Start screen styles */
+    #start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 14, 39, 0.95);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      transition: opacity 0.5s ease;
+    }
+
+    #start-screen.hidden {
+      display: none;
+    }
+
+    #start-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    #start-button:hover {
+      transform: scale(1.1);
+    }
+
+    #start-button img {
+      width: 200px;
+      height: auto;
+    }
+
+    .start-text {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      color: #00ff88;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 1.5rem;
+      }
+      
+      .projects-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Canvas para bacteria 3D -->
+  <canvas id="canvas3d"></canvas>
+
+  <!-- Pantalla de inicio (opcional, puedes removerla si no la necesitas) -->
+  <div id="start-screen" style="display: none;">
+    <button id="start-button">
+      <div style="width: 200px; height: 200px; background: linear-gradient(135deg, #00ff88, #00ccff); border-radius: 50%;"></div>
+    </button>
+    <p class="start-text">Presiona para comenzar</p>
+  </div>
+
+  <!-- CONTENIDO PRINCIPAL DE LA PÁGINA -->
+  <div class="main-content">
+    <header>
+      <h1>Modificación de bacterias con nanopartículas de magnetita para producir energía eléctrica</h1>
+      <p>Biblioteca central de proyectos HTML</p>
+    </header>
+
+    <main class="projects-container">
+      <div class="project-card">
+        <h2>BacteriaEnergy3D</h2>
+        <p>Modelo en 3D.</p>
+        <a href="BacteriaEnergy3D.html">Abrir</a>
+      </div>
+
+      <div class="project-card">
+        <h2>Investigación</h2>
+        <p>La información del proyecto.</p>
+        <a href="libroJHJ.html">Abrir</a>
+      </div>
+
+      <div class="project-card">
+        <h2>Simulador 2D</h2>
+        <p>Modelo en 2D.</p>
+        <a href="Simulador2d.html">Abrir</a>
+      </div>
+
+      <div class="project-card">
+        <h2>Simulación bacterias</h2>
+        <p>Modelo en 3D Bacterias.</p>
+        <a href="simulacion_bacterias.html">Abrir</a>
+      </div>
+
+      <div class="project-card">
+        <h2>Manual de simulación bacterias</h2>
+        <p>La información del manual de simulación bacterias.</p>
+        <a href="manual_bacteria_simulacion.html">Abrir</a>
+      </div>
+
+      <div class="project-card">
+        <h2>Modelo 3D interactivo</h2>
+        <p>Es el mismo modelo 3D pero interactivo.</p>
+        <a href="modelo3d_interactivo.html">Abrir</a>
+      </div>
+
+      <div class="project-card">
+        <h2>Wiki</h2>
+        <p>Ustedes nos pueden ayudar con comentarios o ideas.</p>
+        <a href="http://www.nanoenergy.ct.ws/index.php">Abrir</a>
+      </div>
+
+      <div class="project-card">
+        <h2>Tienda virtual</h2>
+        <p>En esta tienda podrás ver lo que somos capaces de hacer nuestro equipo.</p>
+        <a href="https://jesus111112.github.io/Virtual-Fenix/">Abrir</a>
+      </div>
+
+      <div class="project-card">
+        <h2>Editor 3D</h2>
+        <p>Ahora tú puedes crear modelos.</p>
+        <a href="Editor_3D.html">Abrir</a>
+      </div>
+    </main>
+
+    <footer>
+      <p>© 2025 | Panel de proyectos HTML</p>
+    </footer>
+  </div>
+
+  <!-- Three.js desde CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <script>
+    // Configuración de Three.js
+    const canvas = document.getElementById('canvas3d');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    camera.position.z = 5;
+
+    // Función para crear una bacteria individual
+    function createBacteria() {
+      const bacteriaGroup = new THREE.Group();
+      
+      // Crear cuerpo de la bacteria (forma de bastón)
+      // Cilindro con esferas en los extremos para simular cápsula
+      const bodyGroup = new THREE.Group();
+      
+      const cylinderGeometry = new THREE.CylinderGeometry(0.4, 0.4, 2, 32);
+      const sphereGeometry = new THREE.SphereGeometry(0.4, 32, 32);
+      
+      const bodyMaterial = new THREE.MeshPhongMaterial({
+        color: 0x44ff88,
+        emissive: 0x115522,
+        shininess: 30,
+        transparent: true,
+        opacity: 0.8
+      });
+      
+      // Cilindro central
+      const cylinder = new THREE.Mesh(cylinderGeometry, bodyMaterial);
+      bodyGroup.add(cylinder);
+      
+      // Esfera superior
+      const sphereTop = new THREE.Mesh(sphereGeometry, bodyMaterial);
+      sphereTop.position.y = 1;
+      bodyGroup.add(sphereTop);
+      
+      // Esfera inferior
+      const sphereBottom = new THREE.Mesh(sphereGeometry, bodyMaterial);
+      sphereBottom.position.y = -1;
+      bodyGroup.add(sphereBottom);
+      
+      bacteriaGroup.add(bodyGroup);
+
+      // Crear pili con efecto de rayos eléctricos
+      const piliGroup = new THREE.Group();
+      const numPili = 40;
+      
+      for (let i = 0; i < numPili; i++) {
+        // Crear puntos para el rayo con zigzag
+        const points = [];
+        const segments = 15;
+        const length = 2 + Math.random() * 3;
+        
+        // Punto inicial en el cuerpo
+        const angle = (i / numPili) * Math.PI * 2;
+        const radius = 0.4;
+        const startX = Math.cos(angle) * radius;
+        const startY = (Math.random() - 0.5) * 2;
+        const startZ = Math.sin(angle) * radius;
+        
+        points.push(new THREE.Vector3(startX, startY, startZ));
+        
+        // Crear zigzag
+        for (let j = 1; j <= segments; j++) {
+          const progress = j / segments;
+          const x = startX + (Math.random() - 0.5) * 0.5 + Math.cos(angle) * length * progress;
+          const y = startY + (Math.random() - 0.5) * 0.5;
+          const z = startZ + (Math.random() - 0.5) * 0.5 + Math.sin(angle) * length * progress;
+          points.push(new THREE.Vector3(x, y, z));
+        }
+        
+        const piliGeometry = new THREE.BufferGeometry().setFromPoints(points);
+        const piliMaterial = new THREE.LineBasicMaterial({
+          color: 0xaaff44,
+          transparent: true,
+          opacity: 0.6 + Math.random() * 0.3,
+          linewidth: 2
+        });
+        
+        const pili = new THREE.Line(piliGeometry, piliMaterial);
+        piliGroup.add(pili);
+      }
+      
+      bacteriaGroup.add(piliGroup);
+
+      // Crear nanopartículas de magnetita
+      const particlesGroup = new THREE.Group();
+      const numParticles = 30;
+      
+      for (let i = 0; i < numParticles; i++) {
+        const particleGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+        const particleMaterial = new THREE.MeshPhongMaterial({
+          color: 0xffaa00,
+          emissive: 0xff6600,
+          transparent: true,
+          opacity: 0.7
+        });
+        
+        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+        particle.position.set(
+          (Math.random() - 0.5) * 1.2,
+          (Math.random() - 0.5) * 2.3,
+          (Math.random() - 0.5) * 1.2
+        );
+        
+        particlesGroup.add(particle);
+      }
+      
+      bacteriaGroup.add(particlesGroup);
+      
+      // Guardar referencias para animación
+      bacteriaGroup.userData.body = bodyGroup;
+      bacteriaGroup.userData.pili = piliGroup;
+      bacteriaGroup.userData.particles = particlesGroup;
+      
+      return bacteriaGroup;
+    }
+
+    // Crear 5 bacterias
+    const bacteria1 = createBacteria(); // Sigue el mouse (centro)
+    bacteria1.position.set(0, 0, 0);
+    scene.add(bacteria1);
+
+    const bacteria2 = createBacteria(); // Flotando arriba-derecha
+    bacteria2.position.set(4, 3, -2);
+    bacteria2.rotation.set(0.5, 0.8, 0.3);
+    bacteria2.scale.set(0.8, 0.8, 0.8);
+    scene.add(bacteria2);
+
+    const bacteria3 = createBacteria(); // Flotando abajo-izquierda
+    bacteria3.position.set(-4, -2, -3);
+    bacteria3.rotation.set(-0.3, 1.2, 0.5);
+    bacteria3.scale.set(0.7, 0.7, 0.7);
+    scene.add(bacteria3);
+
+    const bacteria4 = createBacteria(); // Nueva: abajo-derecha
+    bacteria4.position.set(5, -3, -2.5);
+    bacteria4.rotation.set(0.7, -0.5, 0.8);
+    bacteria4.scale.set(0.65, 0.65, 0.65);
+    scene.add(bacteria4);
+
+    const bacteria5 = createBacteria(); // Nueva: arriba-izquierda
+    bacteria5.position.set(-5, 3.5, -3);
+    bacteria5.rotation.set(-0.6, 0.9, -0.4);
+    bacteria5.scale.set(0.75, 0.75, 0.75);
+    scene.add(bacteria5);
+
+    // Iluminación mejorada
+    const ambientLight = new THREE.AmbientLight(0x303030, 0.8);
+    scene.add(ambientLight);
+    
+    const pointLight1 = new THREE.PointLight(0x88ff44, 1.5, 100);
+    pointLight1.position.set(5, 5, 5);
+    scene.add(pointLight1);
+    
+    const pointLight2 = new THREE.PointLight(0xffaa00, 1.2, 100);
+    pointLight2.position.set(-5, -5, 5);
+    scene.add(pointLight2);
+    
+    const pointLight3 = new THREE.PointLight(0x44ff88, 1, 100);
+    pointLight3.position.set(0, 5, -5);
+    scene.add(pointLight3);
+
+    // Variables para seguimiento del mouse
+    let mouseX = 0;
+    let mouseY = 0;
+    let targetRotationX = 0;
+    let targetRotationY = 0;
+
+    // Seguir el mouse
+    document.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+      
+      targetRotationY = mouseX * 0.5;
+      targetRotationX = mouseY * 0.3;
+    });
+
+    // Animación
+    let time = 0;
+    function animate() {
+      requestAnimationFrame(animate);
+      time += 0.01;
+      
+      // BACTERIA 1 - Sigue el mouse
+      bacteria1.rotation.y += (targetRotationY - bacteria1.rotation.y) * 0.05;
+      bacteria1.rotation.x += (targetRotationX - bacteria1.rotation.x) * 0.05;
+      bacteria1.rotation.z += 0.002;
+      
+      // Respiración del cuerpo
+      const scale1 = 1 + Math.sin(time) * 0.05;
+      bacteria1.userData.body.scale.set(scale1, scale1, scale1);
+      
+      // Animación de pili
+      bacteria1.userData.pili.rotation.y = Math.sin(time * 0.5) * 0.1;
+      
+      // Animación de partículas
+      bacteria1.userData.particles.rotation.y = time * 0.3;
+      bacteria1.userData.particles.rotation.x = Math.sin(time * 0.2) * 0.2;
+      
+      // BACTERIA 2 - Flotación lenta
+      bacteria2.rotation.x += 0.003;
+      bacteria2.rotation.y += 0.005;
+      bacteria2.position.y = 3 + Math.sin(time * 0.3) * 0.5;
+      bacteria2.position.x = 4 + Math.cos(time * 0.2) * 0.3;
+      
+      const scale2 = 0.8 + Math.sin(time * 0.8) * 0.03;
+      bacteria2.userData.body.scale.set(scale2, scale2, scale2);
+      bacteria2.userData.pili.rotation.z = Math.sin(time * 0.6) * 0.15;
+      bacteria2.userData.particles.rotation.y = time * 0.4;
+      
+      // BACTERIA 3 - Flotación ondulante
+      bacteria3.rotation.x -= 0.002;
+      bacteria3.rotation.z += 0.004;
+      bacteria3.position.y = -2 + Math.cos(time * 0.4) * 0.4;
+      bacteria3.position.x = -4 + Math.sin(time * 0.3) * 0.2;
+      
+      const scale3 = 0.7 + Math.cos(time * 0.7) * 0.03;
+      bacteria3.userData.body.scale.set(scale3, scale3, scale3);
+      bacteria3.userData.pili.rotation.x = Math.cos(time * 0.5) * 0.12;
+      bacteria3.userData.particles.rotation.y = time * 0.35;
+      
+      // BACTERIA 4 - Flotación abajo-derecha
+      bacteria4.rotation.y += 0.004;
+      bacteria4.rotation.x += 0.002;
+      bacteria4.position.y = -3 + Math.sin(time * 0.35) * 0.5;
+      bacteria4.position.x = 5 + Math.cos(time * 0.25) * 0.3;
+      
+      const scale4 = 0.65 + Math.sin(time * 0.9) * 0.03;
+      bacteria4.userData.body.scale.set(scale4, scale4, scale4);
+      bacteria4.userData.pili.rotation.z = Math.sin(time * 0.7) * 0.1;
+      bacteria4.userData.particles.rotation.y = time * 0.38;
+      
+      // BACTERIA 5 - Flotación arriba-izquierda
+      bacteria5.rotation.z -= 0.003;
+      bacteria5.rotation.y += 0.003;
+      bacteria5.position.y = 3.5 + Math.cos(time * 0.45) * 0.4;
+      bacteria5.position.x = -5 + Math.sin(time * 0.35) * 0.25;
+      
+      const scale5 = 0.75 + Math.cos(time * 0.65) * 0.03;
+      bacteria5.userData.body.scale.set(scale5, scale5, scale5);
+      bacteria5.userData.pili.rotation.y = Math.cos(time * 0.6) * 0.13;
+      bacteria5.userData.particles.rotation.y = time * 0.32;
+      
+      // Animar luces para efecto de energía eléctrica
+      pointLight1.intensity = 1.5 + Math.sin(time * 2) * 0.3;
+      pointLight2.intensity = 1.2 + Math.cos(time * 1.5) * 0.3;
+      
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // Responsive
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Start screen (opcional)
+    const startButton = document.getElementById('start-button');
+    const startScreen = document.getElementById('start-screen');
+    
+    if (startButton) {
+      startButton.addEventListener('click', () => {
+        startScreen.style.opacity = '0';
+        setTimeout(() => {
+          startScreen.classList.add('hidden');
+        }, 500);
+      });
+    }
+  </script>
+</body>
+</html>
