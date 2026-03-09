@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BacteriaEnergy — NanoBot</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --green: #00ff88;
+    --green-dim: rgba(0,255,136,0.06);
+    --green-border: rgba(0,255,136,0.25);
+    --bg: #050d1a;
+    --mono: 'Share Tech Mono', monospace;
+    --orb: 'Orbitron', monospace;
+  }
+
+  html, body {
+    height: 100%; overflow: hidden;
+    background: var(--bg); color: var(--green);
+    font-family: var(--mono);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── Drag shield ── */
+  #dragShield { position:fixed;inset:0;z-index:9999;cursor:col-resize;display:none; }
+  #dragShield.active { display:block; }
+
+  /* ════════════ DESKTOP ════════════ */
+  .split-wrapper {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  .divider {
+    width: 5px; height: 100%; flex-shrink: 0;
+    background: rgba(0,255,136,0.15);
+    cursor: col-resize;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s; position: relative; z-index: 10;
+  }
+  .divider:hover  { background: rgba(0,255,136,0.5);  box-shadow: 0 0 12px rgba(0,255,136,0.3); }
+  .divider.dragging { background: var(--green); box-shadow: 0 0 20px rgba(0,255,136,0.5); }
+  .divider-dots { display:flex; flex-direction:column; gap:4px; pointer-events:none; }
+  .divider-dot  { width:3px;height:3px;border-radius:50%;background:rgba(0,255,136,0.4);transition:background .15s; }
+  .divider:hover .divider-dot, .divider.dragging .divider-dot { background:var(--green); }
+
+  #chatPanel {
+    width: 360px; min-width: 60px; flex-shrink: 0;
+    height: 100vh;
+    display: flex; flex-direction: column;
+    background: radial-gradient(ellipse at 20% 30%, #0a1628 0%, #050d1a 100%);
+    border-right: 1px solid var(--green-border);
+    overflow: hidden; position: relative;
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  #chatPanel.hidden { width:0!important; min-width:0!important; border:none; }
+
+  #sitePanel { flex:1; height:100vh; min-width:80px; display:flex; flex-direction:column; position:relative; }
+  #siteFrame { width:100%;height:100%;border:none;display:block; }
+
+  #showChatBtn {
+    position:absolute; top:12px; left:12px; z-index:100;
+    background:rgba(5,13,26,0.92); border:1px solid var(--green-border);
+    border-radius:8px; color:var(--green); padding:7px 14px;
+    font-size:11px; font-family:var(--mono); cursor:pointer;
+    backdrop-filter:blur(6px); display:none;
+    box-shadow:0 0 16px rgba(0,255,136,0.15); transition:all .15s;
+  }
+  #showChatBtn:hover { background:rgba(0,255,136,0.1); border-color:var(--green); }
+  #showChatBtn.visible { display:block; }
+
+  /* ════════════ CHAT INTERIOR (shared) ════════════ */
+  .chat-header {
+    background: linear-gradient(135deg, #0a1628, #051a0f);
+    padding: 12px 14px; border-bottom: 1px solid rgba(0,255,136,0.2);
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    animation: pulseBorder 3s ease-in-out infinite;
+  }
+  @keyframes pulseBorder {
+    0%,100% { box-shadow: inset 0 -1px 0 rgba(0,255,136,0.2); }
+    50%      { box-shadow: inset 0 -1px 0 rgba(0,255,136,0.5); }
+  }
+  .bot-avatar {
+    width:34px;height:34px;border-radius:50%;
+    background:radial-gradient(circle,#00ff88,#004422);
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;border:2px solid rgba(0,255,136,0.5);
+    box-shadow:0 0 10px rgba(0,255,136,0.3);flex-shrink:0;
+  }
+  .bot-name   { font-family:var(--orb);font-size:13px;font-weight:700;color:var(--green); }
+  .bot-status { font-size:10px;color:rgba(0,255,136,0.5); }
+  .blink { animation:blink 1.5s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  .toggle-btn {
+    margin-left:auto; background:rgba(0,255,136,0.05);
+    border:1px solid rgba(0,255,136,0.2); border-radius:6px;
+    color:rgba(0,255,136,0.6); padding:4px 10px; font-size:10px;
+    font-family:var(--mono); cursor:pointer; transition:all .15s; white-space:nowrap;
+  }
+  .toggle-btn:hover { background:rgba(0,255,136,0.12);color:var(--green);border-color:var(--green); }
+
+  .ctx-bar {
+    background:rgba(0,255,136,0.04); border-bottom:1px solid rgba(0,255,136,0.1);
+    padding:5px 14px; font-size:10px; color:rgba(0,255,136,0.45); flex-shrink:0;
+  }
+
+  .messages {
+    flex:1; overflow-y:auto; padding:12px;
+    display:flex; flex-direction:column; gap:10px;
+    -webkit-overflow-scrolling:touch;
+  }
+  ::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(0,255,136,0.2);border-radius:2px}
+
+  .msg{display:flex;flex-direction:column;}
+  .msg.user{align-items:flex-end;} .msg.bot{align-items:flex-start;}
+  .bubble {
+    max-width:88%; padding:8px 12px; font-size:11.5px; line-height:1.65;
+    border-radius:12px; animation:fadeIn .25s ease;
+  }
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .msg.user .bubble { background:linear-gradient(135deg,#004422,#002211); border:1px solid rgba(0,255,136,0.4); color:var(--green); border-radius:12px 12px 2px 12px; }
+  .msg.bot  .bubble { background:var(--green-dim); border:1px solid rgba(0,255,136,0.15); color:#b0ffda; border-radius:12px 12px 12px 2px; }
+  .typing-bubble { background:var(--green-dim); border:1px solid rgba(0,255,136,0.15); border-radius:12px 12px 12px 2px; padding:8px 14px; color:rgba(0,255,136,0.6); font-size:11px; animation:typingAnim 1s ease infinite; }
+  @keyframes typingAnim{0%,100%{opacity:1}50%{opacity:0.4}}
+
+  .suggestions { padding:6px 10px; border-top:1px solid rgba(0,255,136,0.08); flex-shrink:0; }
+  .suggestions-label { font-size:9px;color:rgba(0,255,136,0.3);margin-bottom:5px;letter-spacing:.1em; }
+  .suggestions-row { display:flex;flex-wrap:wrap;gap:4px; }
+  .sug-btn {
+    background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.15); border-radius:6px;
+    color:rgba(0,255,136,0.5); padding:3px 8px; font-size:9px; cursor:pointer;
+    font-family:var(--mono); transition:all .15s;
+  }
+  .sug-btn:hover,.sug-btn:active{background:rgba(0,255,136,0.12);color:var(--green);border-color:var(--green);}
+
+  .input-area { padding:10px; border-top:1px solid rgba(0,255,136,0.15); display:flex; gap:8px; background:rgba(0,0,0,0.25); flex-shrink:0; }
+  textarea#userInput {
+    flex:1; background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.2);
+    border-radius:8px; color:var(--green); padding:8px 10px; font-size:11px;
+    font-family:var(--mono); resize:none; outline:none; transition:border-color .15s;
+  }
+  textarea#userInput:focus{border-color:var(--green);}
+  textarea#userInput::placeholder{color:rgba(0,255,136,0.25);}
+  #sendBtn {
+    background:var(--green); border:none; border-radius:8px; color:#000;
+    padding:0 14px; font-size:16px; cursor:pointer; font-weight:bold;
+    transition:background .15s; flex-shrink:0;
+  }
+  #sendBtn:hover,#sendBtn:active{background:#00ffaa;}
+  #sendBtn:disabled{background:#002211;color:rgba(0,255,136,0.2);cursor:not-allowed;}
+
+  /* ════════════ MOBILE (≤768px) ════════════ */
+  @media (max-width:768px) {
+    .divider        { display:none!important; }
+    #hideBtn        { display:none!important; }
+    #showChatBtn    { display:none!important; }
+
+    .split-wrapper  { flex-direction:column; height:100%; position:relative; }
+
+    #sitePanel      { width:100%; height:100vh; flex:none; }
+
+    /* bottom sheet */
+    #chatPanel {
+      position:fixed!important;
+      bottom:0; left:0; right:0;
+      width:100%!important; min-width:0!important;
+      height:72vh; max-height:92vh;
+      border-right:none;
+      border-top:2px solid var(--green-border);
+      border-radius:18px 18px 0 0;
+      transform:translateY(100%);
+      transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      z-index:500;
+      box-shadow:0 -8px 40px rgba(0,255,136,0.18);
+    }
+    #chatPanel.hidden         { transform:translateY(100%)!important; width:100%!important; }
+    #chatPanel.mobile-open    { transform:translateY(0); }
+
+    /* handle */
+    #mobileHandle { display:flex!important; }
+
+    /* FAB */
+    #mobileFab { display:flex!important; }
+
+    /* overlay */
+    #mobileOverlay { display:block; }
+
+    /* bigger text on mobile */
+    .bubble           { font-size:13px; }
+    .bot-name         { font-size:14px; }
+    textarea#userInput{ font-size:14px; }
+    .sug-btn          { font-size:11px; padding:5px 10px; }
+  }
+
+  /* ── Mobile handle ── */
+  #mobileHandle {
+    display:none; justify-content:center; padding:10px 0 4px;
+    flex-shrink:0; cursor:grab; touch-action:none;
+  }
+  #mobileHandle span { width:36px;height:4px;border-radius:2px;background:rgba(0,255,136,0.35); }
+
+  /* ── FAB ── */
+  #mobileFab {
+    display:none; position:fixed; bottom:24px; right:20px; z-index:600;
+    width:54px; height:54px; border-radius:50%;
+    background:radial-gradient(circle,#00ff88,#00aa55);
+    border:2px solid rgba(0,255,136,0.6);
+    box-shadow:0 0 24px rgba(0,255,136,0.4);
+    align-items:center; justify-content:center;
+    font-size:22px; cursor:grab; touch-action:none;
+    transition:box-shadow .2s;
+    animation:fabPulse 2.5s ease-in-out infinite;
+    user-select:none;
+    position:fixed; /* override needed for stacking */
+  }
+  #fabIcon { position:relative; z-index:1; line-height:1; }
+  #mobileFab.dragging-fab { cursor:grabbing; animation:none; box-shadow:0 0 32px rgba(0,255,136,0.7); transform:scale(1.08); }
+  #mobileFab.holding { animation:none !important; box-shadow:0 0 28px rgba(255,255,255,0.35); }
+  #mobileFab.chat-open { background:radial-gradient(circle,#ff5588,#aa2244);border-color:rgba(255,85,136,0.6);animation:none;box-shadow:0 0 20px rgba(255,85,136,0.4); }
+  #mobileFab.chat-open #fabRingArc { stroke: rgba(255,255,255,0.8); }
+  @keyframes fabPulse{0%,100%{box-shadow:0 0 16px rgba(0,255,136,0.4)}50%{box-shadow:0 0 32px rgba(0,255,136,0.7)}}
+
+  /* ── Overlay ── */
+  #mobileOverlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.55); z-index:400;
+    backdrop-filter:blur(2px); opacity:0;
+    transition:opacity .3s; pointer-events:none;
+  }
+  #mobileOverlay.visible { opacity:1; pointer-events:all; }
+
+  /* ── Particles ── */
+  .particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+  .particle{position:absolute;border-radius:50%;animation:floatP var(--dur) ease-in-out infinite alternate;animation-delay:var(--delay);}
+  @keyframes floatP{from{transform:translateY(0) translateX(0)}to{transform:translateY(-20px) translateX(8px)}}
+</style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+<div id="dragShield"></div>
+<div id="mobileOverlay" onclick="closeMobileChat()"></div>
+
+<!-- FAB móvil -->
+<div id="mobileFab">
+  <svg id="fabRing" viewBox="0 0 54 54" style="position:absolute;inset:0;width:54px;height:54px;transform:rotate(-90deg);pointer-events:none;">
+    <circle cx="27" cy="27" r="24" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="3"/>
+    <circle id="fabRingArc" cx="27" cy="27" r="24" fill="none" stroke="#ffffff" stroke-width="3"
+      stroke-linecap="round" stroke-dasharray="150.8" stroke-dashoffset="150.8"/>
+  </svg>
+  <span id="fabIcon">🦠</span>
+</div>
+
+<div class="split-wrapper" id="splitWrapper">
+
+  <!-- ── CHAT PANEL ── -->
+  <div id="chatPanel">
+    <div id="mobileHandle"><span></span></div>
+
+    <div class="chat-header">
+      <div class="bot-avatar">🦠</div>
+      <div>
+        <div class="bot-name">NanoBot</div>
+        <div class="bot-status"><span class="blink">●</span> <span id="ctxLabel">Inicio</span></div>
+      </div>
+      <button class="toggle-btn" id="hideBtn" onclick="toggleDesktopChat()">⟵ Ocultar</button>
+    </div>
+
+    <div class="ctx-bar">📍 Contexto: <span id="ctxBarLabel">Inicio ⚡</span></div>
+
+    <div class="messages" id="messages">
+      <div class="msg bot">
+        <div class="bubble">¡Hola! Soy <strong>NanoBot</strong> 🦠⚡<br><br>Tu asistente científico. Estoy contigo en <strong>Inicio</strong>.<br><br>¿Tienes alguna duda sobre lo que ves?</div>
+      </div>
+    </div>
+
+    <div class="suggestions">
+      <div class="suggestions-label">PREGUNTAS RÁPIDAS:</div>
+      <div class="suggestions-row" id="suggestionsRow"></div>
+    </div>
+
+    <div class="input-area">
+      <textarea id="userInput" rows="2" placeholder="Pregunta algo sobre lo que ves..."
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
+      <button id="sendBtn" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+
+  <!-- ── DIVIDER ── -->
+  <div class="divider" id="divider">
+    <div class="divider-dots">
+      <div class="divider-dot"></div><div class="divider-dot"></div>
+      <div class="divider-dot"></div><div class="divider-dot"></div>
+      <div class="divider-dot"></div>
+    </div>
+  </div>
+
+  <!-- ── SITE PANEL ── -->
+  <div id="sitePanel">
+    <button id="showChatBtn" onclick="toggleDesktopChat()">🦠 Mostrar NanoBot</button>
+    <iframe id="siteFrame"
+      src="https://jesus111112.github.io/energia_por_bacterias/index.html"
+      title="BacteriaEnergy Project" allow="fullscreen"></iframe>
+  </div>
+
+</div>
+
+<script>
+const VERCEL_URL = "https://energiaporbacterias.vercel.app/api/chat";
+
+const PAGES = {
+  "index":         { label:"Inicio",               icon:"⚡", context:"El usuario está en la página de inicio del proyecto 'Modificación de bacterias con nanopartículas de magnetita para producir energía eléctrica'. Accesos a: modelo 3D, simulador 2D, simulación de bacterias, investigación, wiki, modelo hiperrealista, galería virtual y editor 3D." },
+  "modelo3d":      { label:"Modelo 3D",            icon:"🧬", context:"El usuario ve el modelo 3D interactivo de una celda de combustible microbiana (MFC) con bacterias modificadas con nanopartículas de magnetita (Fe3O4). Las bacterias transfieren electrones hacia el ánodo generando corriente eléctrica." },
+  "simulador2d":   { label:"Simulador 2D",         icon:"🔬", context:"El usuario ve el Simulador 2D: flujo de electrones desde las bacterias al circuito, cámara anódica y catódica separadas por membrana PEM, y cómo las nanopartículas de magnetita mejoran la conductividad eléctrica." },
+  "simulacion":    { label:"Simulación Bacterias", icon:"🦠", context:"El usuario ve la simulación 3D de bacterias electroactivas (Geobacter sulfurreducens) en movimiento con nanopartículas de magnetita adheridas, formando biofilms conductores y transfiriendo electrones extracelularmente." },
+  "investigacion": { label:"Investigación",        icon:"📚", context:"El usuario lee el documento de investigación del proyecto: celdas de combustible microbianas (MFC), nanopartículas de magnetita, bacterias electroactivas, metodología experimental, resultados y referencias." },
+  "hiperrealista": { label:"Modelo Hiperrealista", icon:"🏭", context:"El usuario ve el Modelo Hiperrealista 3D de la celda de combustible microbiana en entorno industrial: cámara anódica, catódica, membrana PEM, electrodos y circuito externo." },
+};
+const SUGGESTIONS = {
+  "index":         ["¿Qué es una MFC?","¿Para qué sirven las nanopartículas?","¿Cómo funciona?"],
+  "modelo3d":      ["¿Qué es el ánodo?","¿Cómo fluyen los electrones?","¿Qué bacteria se usa?"],
+  "simulador2d":   ["¿Qué es la membrana PEM?","¿Cómo se genera corriente?","¿Qué es biofilm?"],
+  "simulacion":    ["¿Qué es Geobacter?","¿Cómo se adhieren?","¿Qué es un biofilm?"],
+  "investigacion": ["¿Cuál es la hipótesis?","¿Qué resultados hay?","¿Qué es Fe3O4?"],
+  "hiperrealista": ["¿Dónde se aplicaría?","¿Cuánta energía produce?","¿Es viable?"],
+};
+const GREETINGS = {
+  "index":"¿Quieres que te explique alguna sección del proyecto?",
+  "modelo3d":"¿Tienes dudas sobre la estructura de la celda o el modelo 3D?",
+  "simulador2d":"¿Quieres que te explique el flujo de electrones o algún componente?",
+  "simulacion":"¿Alguna duda sobre el comportamiento de las bacterias o las nanopartículas?",
+  "investigacion":"¿Quieres que te explique algún concepto del documento de investigación?",
+  "hiperrealista":"¿Te explico cómo funcionaría este dispositivo en una aplicación real?",
+};
+
+function getSystemPrompt(key) {
+  const p = PAGES[key]||PAGES["index"];
+  return `Eres NanoBot, asistente científico del proyecto "Modificación de bacterias con nanopartículas de magnetita para producir energía eléctrica". Experto en: Celdas MFC, Nanopartículas Fe3O4, Bacterias electroactivas, Biotecnología y nanotecnología, Transferencia extracelular de electrones.\n\nCONTEXTO ACTUAL:\n${p.context}\n\nINSTRUCCIONES: Responde SIEMPRE en español. Máximo 150 palabras. Usa emojis científicos. Relaciona tu respuesta con lo que el usuario ve. Tono amigable y motivador.`;
+}
+
+let currentPage    = "index";
+let messages       = [];
+let isLoading      = false;
+let mobileOpen     = false;
+let desktopVisible = true;
+let savedWidth     = 360;
+const isMobile     = () => window.innerWidth <= 768;
+
+// Iframe detection
+const frame = document.getElementById("siteFrame");
+frame.addEventListener("load", () => {
+  try { const k = detectPage(frame.contentWindow.location.href); if(k!==currentPage) switchContext(k); } catch(e){}
+});
+window.addEventListener("message", e => { if(e.data?.page) switchContext(e.data.page); });
+function detectPage(url) { for(const k of Object.keys(PAGES)) if(url.includes(k)) return k; return "index"; }
+
+function switchContext(key) {
+  currentPage = key;
+  const p = PAGES[key]||PAGES["index"];
+  document.getElementById("ctxLabel").textContent    = p.label;
+  document.getElementById("ctxBarLabel").textContent = `${p.label} ${p.icon}`;
+  renderSuggestions(key);
+  messages = [];
+  addBotMessage(`Ahora estoy contigo en <strong>${p.label}</strong> ${p.icon}<br><br>${GREETINGS[key]||"¿En qué puedo ayudarte?"}`);
+}
+
+function addBotMessage(html) {
+  messages.push({ role:"assistant", content:html.replace(/<[^>]+>/g,"") });
+  renderMessages();
+}
+function renderMessages() {
+  const c = document.getElementById("messages");
+  c.innerHTML = messages.map(m=>`<div class="msg ${m.role==="user"?"user":"bot"}"><div class="bubble">${formatText(m.content)}</div></div>`).join("");
+  c.scrollTop = c.scrollHeight;
+}
+function formatText(t) { return t.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>").replace(/\n/g,"<br>"); }
+function renderSuggestions(key) {
+  document.getElementById("suggestionsRow").innerHTML = (SUGGESTIONS[key]||[]).map(s=>`<button class="sug-btn" onclick="setInput('${s.replace(/'/g,"\\'")}')">${s}</button>`).join("");
+}
+function setInput(t) { const el=document.getElementById("userInput"); el.value=t; el.focus(); }
+
+async function sendMessage() {
+  const input = document.getElementById("userInput");
+  const text  = input.value.trim();
+  if (!text || isLoading) return;
+
+  messages.push({ role: "user", content: text });
+  input.value = "";
+  renderMessages();
+
+  isLoading = true;
+  document.getElementById("sendBtn").disabled = true;
+
+  // Mostrar indicador de escritura
+  const c  = document.getElementById("messages");
+  const te = document.createElement("div");
+  te.id        = "typing";
+  te.className = "msg bot";
+  te.innerHTML = `<div class="typing-bubble">Procesando... ⚡</div>`;
+  c.appendChild(te);
+  c.scrollTop = c.scrollHeight;
+
+  try {
+    // ✅ Llama a TU Vercel — la API key nunca está aquí
+    const res = await fetch(VERCEL_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        page: currentPage,
+        messages: messages.map(m => ({ role: m.role, content: m.content }))
+      })
+    });
+
+    const data = await res.json();
+    const reply = data.text || "Lo siento, no pude procesar tu pregunta.";
+    messages.push({ role: "assistant", content: reply });
+
+  } catch (e) {
+    messages.push({ role: "assistant", content: "❌ Error de conexión con el servidor." });
+  } finally {
+    isLoading = false;
+    document.getElementById("sendBtn").disabled = false;
+    document.getElementById("typing")?.remove();
+    renderMessages();
+  }
+}
+
+// ── Desktop toggle ──
+function toggleDesktopChat() {
+  if(isMobile()) return;
+  desktopVisible=!desktopVisible;
+  const panel=document.getElementById("chatPanel"), div=document.getElementById("divider"), btn=document.getElementById("showChatBtn");
+  if(desktopVisible) { panel.classList.remove("hidden"); panel.style.width=savedWidth+"px"; div.style.display=""; btn.classList.remove("visible"); }
+  else               { savedWidth=panel.offsetWidth; panel.classList.add("hidden"); div.style.display="none"; btn.classList.add("visible"); }
+}
+
+// ── Mobile toggle ──
+function toggleMobileChat() { mobileOpen?closeMobileChat():openMobileChat(); }
+function openMobileChat() {
+  mobileOpen=true;
+  document.getElementById("chatPanel").classList.add("mobile-open");
+  document.getElementById("mobileOverlay").classList.add("visible");
+  const fab=document.getElementById("mobileFab"); fab.classList.add("chat-open"); fab.textContent="✕";
+}
+function closeMobileChat() {
+  mobileOpen=false;
+  document.getElementById("chatPanel").classList.remove("mobile-open");
+  document.getElementById("mobileOverlay").classList.remove("visible");
+  const fab=document.getElementById("mobileFab"); fab.classList.remove("chat-open"); fab.textContent="🦠";
+}
+
+// ── FAB: long-press con anillo de progreso + arrastrable ──
+(function(){
+  const fab     = document.getElementById("mobileFab");
+  const arc     = document.getElementById("fabRingArc");
+  const icon    = document.getElementById("fabIcon");
+
+  const FAB_SIZE    = 54;
+  const CIRCUMF     = 150.8;   // 2π × r=24
+  const HOLD_MS     = 1200;    // duración del long-press
+  const DRAG_THRESH = 6;       // px antes de considerar que es drag
+
+  // estado
+  let fabDragging = false;
+  let fabMoved    = false;
+  let fabStartX, fabStartY, fabOrigLeft, fabOrigTop;
+  let holdTimer   = null;
+  let holdStart   = 0;
+  let holdRaf     = null;
+  let holding     = false;
+
+  // ── helpers ──
+  function clamp(v,a,b){ return Math.min(Math.max(v,a),b); }
+  function getFabPos(){ const r=fab.getBoundingClientRect(); return {left:r.left,top:r.top}; }
+  function applyPos(left,top){
+    const mx=window.innerWidth-FAB_SIZE-8, my=window.innerHeight-FAB_SIZE-8;
+    fab.style.right="auto"; fab.style.bottom="auto";
+    fab.style.left=clamp(left,8,mx)+"px";
+    fab.style.top =clamp(top, 8,my)+"px";
+  }
+  function snapFabToEdge(){
+    const cx=fab.getBoundingClientRect().left+FAB_SIZE/2;
+    const tx=cx<window.innerWidth/2 ? 8 : window.innerWidth-FAB_SIZE-8;
+    fab.style.transition="left .25s cubic-bezier(0.4,0,0.2,1)";
+    fab.style.left=tx+"px";
+    setTimeout(()=>fab.style.transition="",260);
+  }
+
+  // ── progress ring ──
+  function startRing(){
+    holding   = true;
+    holdStart = performance.now();
+    fab.classList.add("holding");
+    arc.style.transition = "none";
+    arc.style.strokeDashoffset = CIRCUMF;
+
+    function tick(now){
+      if(!holding) return;
+      const elapsed = now - holdStart;
+      const pct     = Math.min(elapsed / HOLD_MS, 1);
+      arc.style.strokeDashoffset = CIRCUMF * (1 - pct);
+
+      if(pct < 1){
+        holdRaf = requestAnimationFrame(tick);
+      } else {
+        // ¡completado! abrir/cerrar chat
+        finishHold();
+      }
+    }
+    holdRaf = requestAnimationFrame(tick);
+  }
+
+  function cancelRing(){
+    holding = false;
+    if(holdRaf) { cancelAnimationFrame(holdRaf); holdRaf=null; }
+    // anima el retroceso del anillo
+    arc.style.transition = "stroke-dashoffset 0.2s ease";
+    arc.style.strokeDashoffset = CIRCUMF;
+    fab.classList.remove("holding");
+    setTimeout(()=>arc.style.transition="none", 220);
+  }
+
+  function finishHold(){
+    holding = false;
+    if(holdRaf){ cancelAnimationFrame(holdRaf); holdRaf=null; }
+    arc.style.strokeDashoffset = CIRCUMF;
+    fab.classList.remove("holding");
+    // pequeña vibración háptica si disponible
+    if(navigator.vibrate) navigator.vibrate(40);
+    toggleMobileChat();
+  }
+
+  // ── touch events ──
+  fab.addEventListener("touchstart", e=>{
+    const t = e.touches[0];
+    const pos = getFabPos();
+    fabStartX   = t.clientX;
+    fabStartY   = t.clientY;
+    fabOrigLeft = pos.left;
+    fabOrigTop  = pos.top;
+    fabDragging = false;
+    fabMoved    = false;
+
+    // iniciar long-press ring
+    startRing();
+  }, {passive:true});
+
+  document.addEventListener("touchmove", e=>{
+    if(!holding && !fabDragging) return;
+    const t  = e.touches[0];
+    const dx = t.clientX - fabStartX;
+    const dy = t.clientY - fabStartY;
+
+    if(!fabMoved && (Math.abs(dx)>DRAG_THRESH || Math.abs(dy)>DRAG_THRESH)){
+      fabMoved    = true;
+      fabDragging = true;
+      // cancelar ring si empezó a mover
+      cancelRing();
+      fab.classList.add("dragging-fab");
+    }
+    if(fabDragging) applyPos(fabOrigLeft+dx, fabOrigTop+dy);
+  },{passive:true});
+
+  document.addEventListener("touchend", ()=>{
+    if(fabDragging){
+      fabDragging = false;
+      fab.classList.remove("dragging-fab");
+      snapFabToEdge();
+    } else {
+      // soltó antes de completar el hold → cancelar
+      cancelRing();
+    }
+    fabMoved = false;
+  });
+
+  // resize
+  window.addEventListener("resize",()=>{
+    if(fab.style.left){ applyPos(parseFloat(fab.style.left), parseFloat(fab.style.top)); }
+  });
+})();
+
+// ── Bottom sheet drag (móvil) ──
+const chatPanel = document.getElementById("chatPanel");
+const handle    = document.getElementById("mobileHandle");
+let sheetStartY=0, sheetStartH=0;
+handle.addEventListener("touchstart", e=>{ sheetStartY=e.touches[0].clientY; sheetStartH=chatPanel.offsetHeight; chatPanel.style.transition="none"; },{passive:true});
+handle.addEventListener("touchmove",  e=>{ if(!isMobile()) return; const dy=sheetStartY-e.touches[0].clientY; chatPanel.style.height=Math.min(Math.max(sheetStartH+dy,120),window.innerHeight*.92)+"px"; },{passive:true});
+handle.addEventListener("touchend",   ()=>{ chatPanel.style.transition=""; if(chatPanel.offsetHeight<160){closeMobileChat();chatPanel.style.height="72vh";} });
+
+// ── Desktop split drag ──
+const wrapper  = document.getElementById("splitWrapper");
+const divider  = document.getElementById("divider");
+const shield   = document.getElementById("dragShield");
+let isDragging=false, startX=0, startWidth=0, totalWidth=0;
+divider.addEventListener("mousedown", e=>{ if(isMobile())return; isDragging=true; startX=e.clientX; startWidth=chatPanel.offsetWidth; totalWidth=wrapper.offsetWidth-divider.offsetWidth; divider.classList.add("dragging"); shield.classList.add("active"); e.preventDefault(); });
+document.addEventListener("mousemove", e=>{ if(!isDragging)return; const nw=Math.min(Math.max(startWidth+(e.clientX-startX),200),totalWidth*.75); chatPanel.style.width=nw+"px"; savedWidth=nw; });
+document.addEventListener("mouseup",  ()=>{ if(!isDragging)return; isDragging=false; divider.classList.remove("dragging"); shield.classList.remove("active"); });
+
+// ── Init ──
+renderSuggestions("index");
+
+const pc=document.getElementById("particles");
+for(let i=0;i<14;i++){
+  const p=document.createElement("div"); p.className="particle";
+  const sz=Math.random()*3+1;
+  p.style.cssText=`width:${sz}px;height:${sz}px;background:hsl(${150+Math.random()*40},100%,60%);left:${Math.random()*100}%;top:${Math.random()*100}%;opacity:${Math.random()*.35+.08};--dur:${3+Math.random()*4}s;--delay:${Math.random()*3}s;`;
+  pc.appendChild(p);
+}
+</script>
+</body>
+</html>
