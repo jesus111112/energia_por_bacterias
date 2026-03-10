@@ -37,7 +37,7 @@ INSTRUCCIONES: Responde SIEMPRE en español. Máximo 150 palabras. Usa emojis ci
     console.log("KEY existe:", !!GEMINI_KEY);
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -63,5 +63,6 @@ INSTRUCCIONES: Responde SIEMPRE en español. Máximo 150 palabras. Usa emojis ci
     return res.status(500).json({ error: error.message });
   }
 }
+
 
 
