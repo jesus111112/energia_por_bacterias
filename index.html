@@ -690,14 +690,14 @@
     }, { passive: true });
     document.addEventListener('touchend', () => { isDragging = false; });
 
-    // Click → navigate
+    // Click → navigate same window
     btn.addEventListener('click', () => {
       if (didDrag) return;
-      window.open('https://jesus111112.github.io/energia_por_bacterias/nanobot.html', '_blank');
+      window.location.href = 'https://jesus111112.github.io/energia_por_bacterias/nanobot.html';
     });
     btn.addEventListener('touchend', () => {
       if (!didDrag) {
-        window.open('https://jesus111112.github.io/energia_por_bacterias/nanobot.html', '_blank');
+        window.location.href = 'https://jesus111112.github.io/energia_por_bacterias/nanobot.html';
       }
     });
 
