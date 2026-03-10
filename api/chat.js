@@ -1,12 +1,16 @@
-export default async function handler(req, res)
+export default async function handler(req, res) {
 
-  // ── CORS: solo permite tu GitHub Pages ──
   res.setHeader("Access-Control-Allow-Origin", "https://jesus111112.github.io");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // preflight
-  if (req.method === "OPTIONS") return res.status(200).end();
+  // manejar preflight
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  // resto del código del chatbot
+}
   if (req.method !== "POST")    return res.status(405).json({ error: "Método no permitido" });
 
   const { messages, page } = req.body;
@@ -77,5 +81,6 @@ INSTRUCCIONES: Responde SIEMPRE en español. Máximo 150 palabras. Usa emojis ci
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 }
+
 
 
