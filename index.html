@@ -18,7 +18,6 @@
       overflow-x: hidden;
     }
 
-    /* Canvas 3D de fondo */
     #canvas3d {
       position: fixed;
       top: 0;
@@ -29,7 +28,6 @@
       pointer-events: none;
     }
 
-    /* Contenedor principal con z-index mayor */
     .main-content {
       position: relative;
       z-index: 10;
@@ -124,7 +122,6 @@
       color: #88ccff;
     }
 
-    /* Start screen styles */
     #start-screen {
       position: fixed;
       top: 0;
@@ -140,9 +137,7 @@
       transition: opacity 0.5s ease;
     }
 
-    #start-screen.hidden {
-      display: none;
-    }
+    #start-screen.hidden { display: none; }
 
     #start-button {
       background: none;
@@ -151,14 +146,8 @@
       transition: transform 0.3s ease;
     }
 
-    #start-button:hover {
-      transform: scale(1.1);
-    }
-
-    #start-button img {
-      width: 200px;
-      height: auto;
-    }
+    #start-button:hover { transform: scale(1.1); }
+    #start-button img { width: 200px; height: auto; }
 
     .start-text {
       margin-top: 20px;
@@ -173,92 +162,101 @@
     }
 
     @media (max-width: 768px) {
-      header h1 {
-        font-size: 1.5rem;
-      }
-      
-      .projects-container {
-        grid-template-columns: 1fr;
-        padding: 10px;
-        gap: 15px;
-      }
-
-      .project-card {
-        padding: 20px;
-      }
-
-      .project-card h2 {
-        font-size: 1.3rem;
-      }
-
-      header {
-        padding: 20px 15px;
-        margin-bottom: 20px;
-      }
-
-      footer {
-        padding: 20px;
-        margin-top: 30px;
-      }
+      header h1 { font-size: 1.5rem; }
+      .projects-container { grid-template-columns: 1fr; padding: 10px; gap: 15px; }
+      .project-card { padding: 20px; }
+      .project-card h2 { font-size: 1.3rem; }
+      header { padding: 20px 15px; margin-bottom: 20px; }
+      footer { padding: 20px; margin-top: 30px; }
     }
 
     @media (max-width: 480px) {
-      header h1 {
-        font-size: 1.2rem;
-        line-height: 1.4;
-      }
-
-      header p {
-        font-size: 0.95rem;
-      }
-
-      .project-card {
-        padding: 18px;
-      }
-
-      .project-card h2 {
-        font-size: 1.2rem;
-      }
-
-      .project-card p {
-        font-size: 0.9rem;
-      }
-
-      .main-content {
-        padding: 10px;
-      }
+      header h1 { font-size: 1.2rem; line-height: 1.4; }
+      header p { font-size: 0.95rem; }
+      .project-card { padding: 18px; }
+      .project-card h2 { font-size: 1.2rem; }
+      .project-card p { font-size: 0.9rem; }
+      .main-content { padding: 10px; }
     }
 
-    /* Mejoras para pantallas táctiles */
     @media (hover: none) and (pointer: coarse) {
-      .project-card {
-        transition: none;
-      }
+      .project-card { transition: none; }
+      .project-card:active { transform: scale(0.98); border-color: rgba(0, 255, 136, 0.8); }
+      .project-card a:active { transform: scale(0.95); }
+    }
 
-      .project-card:active {
-        transform: scale(0.98);
-        border-color: rgba(0, 255, 136, 0.8);
-      }
+    /* ── BACTERIA FLOATING BUTTON ── */
+    #bacteria-btn {
+      position: fixed;
+      width: 110px;
+      height: 110px;
+      cursor: grab;
+      z-index: 999;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      filter: drop-shadow(0 0 16px rgba(0,255,136,0.75));
+      transition: filter 0.2s ease;
+    }
 
-      .project-card a:active {
-        transform: scale(0.95);
-      }
+    #bacteria-btn:hover {
+      filter: drop-shadow(0 0 28px rgba(0,255,136,1)) drop-shadow(0 0 50px rgba(0,204,255,0.5));
+    }
+
+    #bacteria-btn:active { cursor: grabbing; }
+
+    #bacteria-btn canvas {
+      width: 110px;
+      height: 110px;
+      display: block;
+    }
+
+    .btn-label {
+      position: absolute;
+      bottom: -26px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-size: 0.68rem;
+      color: #00ff88;
+      letter-spacing: 1px;
+      text-shadow: 0 0 8px #00ff88;
+      pointer-events: none;
+      animation: pulse 2s infinite;
+    }
+
+    .btn-hint {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(0,255,136,0.45);
+      font-size: 0.72rem;
+      pointer-events: none;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      z-index: 998;
+      animation: hintFade 5s forwards;
+    }
+
+    @keyframes hintFade {
+      0%,60% { opacity:1; }
+      100%    { opacity:0; }
     }
   </style>
 </head>
 <body>
-  <!-- Canvas para bacteria 3D -->
+
   <canvas id="canvas3d"></canvas>
 
-  <!-- Pantalla de inicio (opcional, puedes removerla si no la necesitas) -->
   <div id="start-screen" style="display: none;">
     <button id="start-button">
-      <div style="width: 200px; height: 200px; background: linear-gradient(135deg, #00ff88, #00ccff); border-radius: 50%;"></div>
+      <div style="width:200px;height:200px;background:linear-gradient(135deg,#00ff88,#00ccff);border-radius:50%;"></div>
     </button>
     <p class="start-text">Presiona para comenzar</p>
   </div>
 
-  <!-- CONTENIDO PRINCIPAL DE LA PÁGINA -->
+  <!-- CONTENIDO PRINCIPAL -->
   <div class="main-content">
     <header>
       <h1>Modificación de bacterias con nanopartículas de magnetita para producir energía eléctrica</h1>
@@ -271,37 +269,31 @@
         <p>Modelo en 3D.</p>
         <a href="BacteriaEnergy3D.html">Abrir</a>
       </div>
-
       <div class="project-card">
         <h2>Investigación</h2>
         <p>La información del proyecto.</p>
         <a href="libroJHJ.html">Abrir</a>
       </div>
-
       <div class="project-card">
         <h2>Simulador 2D</h2>
         <p>Modelo en 2D.</p>
         <a href="Simulador2d.html">Abrir</a>
       </div>
-
       <div class="project-card">
         <h2>Simulación bacterias</h2>
         <p>Modelo en 3D Bacterias.</p>
         <a href="simulacion_bacterias.html">Abrir</a>
       </div>
-
       <div class="project-card">
         <h2>Manual de simulación bacterias</h2>
         <p>La información del manual de simulación bacterias.</p>
         <a href="manual_bacteria_simulacion.html">Abrir</a>
       </div>
-
       <div class="project-card">
         <h2>Modelo 3D interactivo</h2>
         <p>Es el mismo modelo 3D pero interactivo.</p>
         <a href="modelo3d_interactivo.html">Abrir</a>
       </div>
-
       <div class="project-card">
         <h2>Wiki</h2>
         <p>Ustedes nos pueden ayudar con comentarios o ideas.</p>
@@ -312,18 +304,16 @@
         <p>Aqui puedes ver la aplicacion de la celda en la vida real.</p>
         <a href="Modelo_Realista3D.html">Abrir</a>
       </div>
-
       <div class="project-card">
-        <h2>galeria virtual</h2>
-        <p>En esta galeria pueden subir o descargar modelos 3d para el ditor 3d.</p>
+        <h2>Galeria virtual</h2>
+        <p>En esta galeria pueden subir o descargar modelos 3d para el editor 3d.</p>
         <a href="http://www.nanoenergy.ct.ws/galeria.php">Abrir</a>
       </div>
-
       <div class="project-card">
         <h2>Editor 3D</h2>
         <p>Ahora tú puedes crear modelos.</p>
         <a href="Editor_3D.html">Abrir</a>
-      </div> 
+      </div>
     </main>
 
     <footer>
@@ -331,331 +321,390 @@
     </footer>
   </div>
 
-  <!-- Three.js desde CDN -->
+  <!-- ── BACTERIA FLOATING BUTTON ── -->
+  <div id="bacteria-btn">
+    <canvas id="bact-canvas" width="220" height="220"></canvas>
+    <span class="btn-label">▶ NANOBOT</span>
+  </div>
+  <div class="btn-hint">Arrastra · Clic para abrir Nanobot</div>
+
+  <!-- Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  
+
   <script>
-    // Configuración de Three.js
-    const canvas = document.getElementById('canvas3d');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    
+    // ════════════════════════════════════════════
+    //  BACKGROUND 3D BACTERIA (Three.js) — igual que el original
+    // ════════════════════════════════════════════
+    const canvas3d = document.getElementById('canvas3d');
+    const scene    = new THREE.Scene();
+    const camera   = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, alpha: true, antialias: true });
+
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limitar para mejor rendimiento
-    camera.position.z = 5;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // Ajustar posición de cámara en móviles
-    function adjustCameraForScreen() {
-      if (window.innerWidth < 768) {
-        camera.position.z = 7; // Alejar en móviles para ver mejor
-      } else {
-        camera.position.z = 5;
-      }
+    function adjustCamera() {
+      camera.position.z = window.innerWidth < 768 ? 7 : 5;
     }
-    
-    adjustCameraForScreen();
+    adjustCamera();
 
-    // Función para crear una bacteria individual
     function createBacteria() {
       const bacteriaGroup = new THREE.Group();
-      
-      // Crear cuerpo de la bacteria (forma de bastón)
-      // Cilindro con esferas en los extremos para simular cápsula
-      const bodyGroup = new THREE.Group();
-      
+      const bodyGroup     = new THREE.Group();
+
       const cylinderGeometry = new THREE.CylinderGeometry(0.4, 0.4, 2, 32);
-      const sphereGeometry = new THREE.SphereGeometry(0.4, 32, 32);
-      
-      const bodyMaterial = new THREE.MeshPhongMaterial({
-        color: 0x44ff88,
-        emissive: 0x115522,
-        shininess: 30,
-        transparent: true,
-        opacity: 0.8
+      const sphereGeometry   = new THREE.SphereGeometry(0.4, 32, 32);
+      const bodyMaterial     = new THREE.MeshPhongMaterial({
+        color: 0x44ff88, emissive: 0x115522, shininess: 30, transparent: true, opacity: 0.8
       });
-      
-      // Cilindro central
-      const cylinder = new THREE.Mesh(cylinderGeometry, bodyMaterial);
-      bodyGroup.add(cylinder);
-      
-      // Esfera superior
-      const sphereTop = new THREE.Mesh(sphereGeometry, bodyMaterial);
-      sphereTop.position.y = 1;
-      bodyGroup.add(sphereTop);
-      
-      // Esfera inferior
-      const sphereBottom = new THREE.Mesh(sphereGeometry, bodyMaterial);
-      sphereBottom.position.y = -1;
-      bodyGroup.add(sphereBottom);
-      
+
+      bodyGroup.add(new THREE.Mesh(cylinderGeometry, bodyMaterial));
+      const sTop = new THREE.Mesh(sphereGeometry, bodyMaterial); sTop.position.y =  1; bodyGroup.add(sTop);
+      const sBot = new THREE.Mesh(sphereGeometry, bodyMaterial); sBot.position.y = -1; bodyGroup.add(sBot);
       bacteriaGroup.add(bodyGroup);
 
-      // Crear pili con efecto de rayos eléctricos
       const piliGroup = new THREE.Group();
-      const numPili = 40;
-      
-      for (let i = 0; i < numPili; i++) {
-        // Crear puntos para el rayo con zigzag
-        const points = [];
-        const segments = 15;
-        const length = 2 + Math.random() * 3;
-        
-        // Punto inicial en el cuerpo
-        const angle = (i / numPili) * Math.PI * 2;
-        const radius = 0.4;
-        const startX = Math.cos(angle) * radius;
-        const startY = (Math.random() - 0.5) * 2;
-        const startZ = Math.sin(angle) * radius;
-        
-        points.push(new THREE.Vector3(startX, startY, startZ));
-        
-        // Crear zigzag
-        for (let j = 1; j <= segments; j++) {
-          const progress = j / segments;
-          const x = startX + (Math.random() - 0.5) * 0.5 + Math.cos(angle) * length * progress;
-          const y = startY + (Math.random() - 0.5) * 0.5;
-          const z = startZ + (Math.random() - 0.5) * 0.5 + Math.sin(angle) * length * progress;
-          points.push(new THREE.Vector3(x, y, z));
+      for (let i = 0; i < 40; i++) {
+        const points  = [];
+        const angle   = (i / 40) * Math.PI * 2;
+        const len     = 2 + Math.random() * 3;
+        const sx      = Math.cos(angle) * 0.4;
+        const sy      = (Math.random() - 0.5) * 2;
+        const sz      = Math.sin(angle) * 0.4;
+        points.push(new THREE.Vector3(sx, sy, sz));
+        for (let j = 1; j <= 15; j++) {
+          const p = j / 15;
+          points.push(new THREE.Vector3(
+            sx + (Math.random() - 0.5) * 0.5 + Math.cos(angle) * len * p,
+            sy + (Math.random() - 0.5) * 0.5,
+            sz + (Math.random() - 0.5) * 0.5 + Math.sin(angle) * len * p
+          ));
         }
-        
-        const piliGeometry = new THREE.BufferGeometry().setFromPoints(points);
-        const piliMaterial = new THREE.LineBasicMaterial({
-          color: 0xaaff44,
-          transparent: true,
-          opacity: 0.6 + Math.random() * 0.3,
-          linewidth: 2
-        });
-        
-        const pili = new THREE.Line(piliGeometry, piliMaterial);
+        const pili = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(points),
+          new THREE.LineBasicMaterial({ color: 0xaaff44, transparent: true, opacity: 0.6 + Math.random() * 0.3 })
+        );
         piliGroup.add(pili);
       }
-      
       bacteriaGroup.add(piliGroup);
 
-      // Crear nanopartículas de magnetita
       const particlesGroup = new THREE.Group();
-      const numParticles = 30;
-      
-      for (let i = 0; i < numParticles; i++) {
-        const particleGeometry = new THREE.SphereGeometry(0.05, 8, 8);
-        const particleMaterial = new THREE.MeshPhongMaterial({
-          color: 0xffaa00,
-          emissive: 0xff6600,
-          transparent: true,
-          opacity: 0.7
-        });
-        
-        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-        particle.position.set(
-          (Math.random() - 0.5) * 1.2,
-          (Math.random() - 0.5) * 2.3,
-          (Math.random() - 0.5) * 1.2
+      for (let i = 0; i < 30; i++) {
+        const p = new THREE.Mesh(
+          new THREE.SphereGeometry(0.05, 8, 8),
+          new THREE.MeshPhongMaterial({ color: 0xffaa00, emissive: 0xff6600, transparent: true, opacity: 0.7 })
         );
-        
-        particlesGroup.add(particle);
+        p.position.set((Math.random()-.5)*1.2, (Math.random()-.5)*2.3, (Math.random()-.5)*1.2);
+        particlesGroup.add(p);
       }
-      
       bacteriaGroup.add(particlesGroup);
-      
-      // Guardar referencias para animación
-      bacteriaGroup.userData.body = bodyGroup;
-      bacteriaGroup.userData.pili = piliGroup;
+
+      bacteriaGroup.userData.body      = bodyGroup;
+      bacteriaGroup.userData.pili      = piliGroup;
       bacteriaGroup.userData.particles = particlesGroup;
-      
       return bacteriaGroup;
     }
 
-    // Crear bacterias con tamaños ajustables
-    const isMobile = window.innerWidth < 768;
-    const scaleMultiplier = isMobile ? 0.7 : 1; // Bacterias más pequeñas en móvil
+    const isMobile        = window.innerWidth < 768;
+    const scaleMultiplier = isMobile ? 0.7 : 1;
 
-    const bacteria1 = createBacteria(); // Sigue el mouse (centro)
-    bacteria1.position.set(0, 0, 0);
-    bacteria1.scale.multiplyScalar(scaleMultiplier);
-    scene.add(bacteria1);
+    const b1 = createBacteria(); b1.position.set(0, 0, 0); b1.scale.multiplyScalar(scaleMultiplier); scene.add(b1);
+    const b2 = createBacteria(); b2.position.set(4, 3, -2); b2.rotation.set(0.5,0.8,0.3); b2.scale.setScalar(0.8*scaleMultiplier); scene.add(b2);
+    const b3 = createBacteria(); b3.position.set(-4,-2,-3); b3.rotation.set(-0.3,1.2,0.5); b3.scale.setScalar(0.7*scaleMultiplier); scene.add(b3);
+    const b4 = createBacteria(); b4.position.set(5,-3,-2.5); b4.rotation.set(0.7,-0.5,0.8); b4.scale.setScalar(0.65*scaleMultiplier); scene.add(b4);
+    const b5 = createBacteria(); b5.position.set(-5,3.5,-3); b5.rotation.set(-0.6,0.9,-0.4); b5.scale.setScalar(0.75*scaleMultiplier); scene.add(b5);
 
-    const bacteria2 = createBacteria(); // Flotando arriba-derecha
-    bacteria2.position.set(4, 3, -2);
-    bacteria2.rotation.set(0.5, 0.8, 0.3);
-    bacteria2.scale.set(0.8 * scaleMultiplier, 0.8 * scaleMultiplier, 0.8 * scaleMultiplier);
-    scene.add(bacteria2);
+    scene.add(new THREE.AmbientLight(0x303030, 0.8));
+    const pL1 = new THREE.PointLight(0x88ff44, 1.5, 100); pL1.position.set(5, 5, 5); scene.add(pL1);
+    const pL2 = new THREE.PointLight(0xffaa00, 1.2, 100); pL2.position.set(-5,-5, 5); scene.add(pL2);
+    const pL3 = new THREE.PointLight(0x44ff88, 1.0, 100); pL3.position.set(0, 5,-5); scene.add(pL3);
 
-    const bacteria3 = createBacteria(); // Flotando abajo-izquierda
-    bacteria3.position.set(-4, -2, -3);
-    bacteria3.rotation.set(-0.3, 1.2, 0.5);
-    bacteria3.scale.set(0.7 * scaleMultiplier, 0.7 * scaleMultiplier, 0.7 * scaleMultiplier);
-    scene.add(bacteria3);
-
-    const bacteria4 = createBacteria(); // Nueva: abajo-derecha
-    bacteria4.position.set(5, -3, -2.5);
-    bacteria4.rotation.set(0.7, -0.5, 0.8);
-    bacteria4.scale.set(0.65 * scaleMultiplier, 0.65 * scaleMultiplier, 0.65 * scaleMultiplier);
-    scene.add(bacteria4);
-
-    const bacteria5 = createBacteria(); // Nueva: arriba-izquierda
-    bacteria5.position.set(-5, 3.5, -3);
-    bacteria5.rotation.set(-0.6, 0.9, -0.4);
-    bacteria5.scale.set(0.75 * scaleMultiplier, 0.75 * scaleMultiplier, 0.75 * scaleMultiplier);
-    scene.add(bacteria5);
-
-    // Iluminación mejorada
-    const ambientLight = new THREE.AmbientLight(0x303030, 0.8);
-    scene.add(ambientLight);
-    
-    const pointLight1 = new THREE.PointLight(0x88ff44, 1.5, 100);
-    pointLight1.position.set(5, 5, 5);
-    scene.add(pointLight1);
-    
-    const pointLight2 = new THREE.PointLight(0xffaa00, 1.2, 100);
-    pointLight2.position.set(-5, -5, 5);
-    scene.add(pointLight2);
-    
-    const pointLight3 = new THREE.PointLight(0x44ff88, 1, 100);
-    pointLight3.position.set(0, 5, -5);
-    scene.add(pointLight3);
-
-    // Variables para seguimiento del mouse y touch
-    let mouseX = 0;
-    let mouseY = 0;
-    let targetRotationX = 0;
-    let targetRotationY = 0;
-
-    // Seguir el mouse (desktop)
-    document.addEventListener('mousemove', (e) => {
-      mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-      mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
-      
-      targetRotationY = mouseX * 0.5;
-      targetRotationX = mouseY * 0.3;
+    let mouseX = 0, mouseY = 0, targetRotX = 0, targetRotY = 0;
+    document.addEventListener('mousemove', e => {
+      mouseX    = (e.clientX / window.innerWidth)  * 2 - 1;
+      mouseY    = -(e.clientY / window.innerHeight) * 2 + 1;
+      targetRotY = mouseX * 0.5;
+      targetRotX = mouseY * 0.3;
     });
-
-    // Soporte para touch (móviles y tablets)
-    document.addEventListener('touchmove', (e) => {
+    document.addEventListener('touchmove', e => {
       if (e.touches.length > 0) {
-        const touch = e.touches[0];
-        mouseX = (touch.clientX / window.innerWidth) * 2 - 1;
-        mouseY = -(touch.clientY / window.innerHeight) * 2 + 1;
-        
-        targetRotationY = mouseX * 0.5;
-        targetRotationX = mouseY * 0.3;
+        const t = e.touches[0];
+        targetRotY = ((t.clientX / window.innerWidth) * 2 - 1) * 0.5;
+        targetRotX = (-(t.clientY / window.innerHeight) * 2 + 1) * 0.3;
       }
     }, { passive: true });
+    document.addEventListener('touchend', () => { targetRotX = 0; targetRotY = 0; });
 
-    // Reset cuando no hay touch
-    document.addEventListener('touchend', () => {
-      targetRotationX = 0;
-      targetRotationY = 0;
-    });
+    let bgTime = 0;
+    function animateBg() {
+      requestAnimationFrame(animateBg);
+      bgTime += 0.01;
 
-    // Animación
-    let time = 0;
-    function animate() {
-      requestAnimationFrame(animate);
-      time += 0.01;
-      
-      // BACTERIA 1 - Sigue el mouse
-      bacteria1.rotation.y += (targetRotationY - bacteria1.rotation.y) * 0.05;
-      bacteria1.rotation.x += (targetRotationX - bacteria1.rotation.x) * 0.05;
-      bacteria1.rotation.z += 0.002;
-      
-      // Respiración del cuerpo
-      const scale1 = 1 + Math.sin(time) * 0.05;
-      bacteria1.userData.body.scale.set(scale1, scale1, scale1);
-      
-      // Animación de pili
-      bacteria1.userData.pili.rotation.y = Math.sin(time * 0.5) * 0.1;
-      
-      // Animación de partículas
-      bacteria1.userData.particles.rotation.y = time * 0.3;
-      bacteria1.userData.particles.rotation.x = Math.sin(time * 0.2) * 0.2;
-      
-      // BACTERIA 2 - Flotación lenta
-      bacteria2.rotation.x += 0.003;
-      bacteria2.rotation.y += 0.005;
-      bacteria2.position.y = 3 + Math.sin(time * 0.3) * 0.5;
-      bacteria2.position.x = 4 + Math.cos(time * 0.2) * 0.3;
-      
-      const scale2 = 0.8 + Math.sin(time * 0.8) * 0.03;
-      bacteria2.userData.body.scale.set(scale2, scale2, scale2);
-      bacteria2.userData.pili.rotation.z = Math.sin(time * 0.6) * 0.15;
-      bacteria2.userData.particles.rotation.y = time * 0.4;
-      
-      // BACTERIA 3 - Flotación ondulante
-      bacteria3.rotation.x -= 0.002;
-      bacteria3.rotation.z += 0.004;
-      bacteria3.position.y = -2 + Math.cos(time * 0.4) * 0.4;
-      bacteria3.position.x = -4 + Math.sin(time * 0.3) * 0.2;
-      
-      const scale3 = 0.7 + Math.cos(time * 0.7) * 0.03;
-      bacteria3.userData.body.scale.set(scale3, scale3, scale3);
-      bacteria3.userData.pili.rotation.x = Math.cos(time * 0.5) * 0.12;
-      bacteria3.userData.particles.rotation.y = time * 0.35;
-      
-      // BACTERIA 4 - Flotación abajo-derecha
-      bacteria4.rotation.y += 0.004;
-      bacteria4.rotation.x += 0.002;
-      bacteria4.position.y = -3 + Math.sin(time * 0.35) * 0.5;
-      bacteria4.position.x = 5 + Math.cos(time * 0.25) * 0.3;
-      
-      const scale4 = 0.65 + Math.sin(time * 0.9) * 0.03;
-      bacteria4.userData.body.scale.set(scale4, scale4, scale4);
-      bacteria4.userData.pili.rotation.z = Math.sin(time * 0.7) * 0.1;
-      bacteria4.userData.particles.rotation.y = time * 0.38;
-      
-      // BACTERIA 5 - Flotación arriba-izquierda
-      bacteria5.rotation.z -= 0.003;
-      bacteria5.rotation.y += 0.003;
-      bacteria5.position.y = 3.5 + Math.cos(time * 0.45) * 0.4;
-      bacteria5.position.x = -5 + Math.sin(time * 0.35) * 0.25;
-      
-      const scale5 = 0.75 + Math.cos(time * 0.65) * 0.03;
-      bacteria5.userData.body.scale.set(scale5, scale5, scale5);
-      bacteria5.userData.pili.rotation.y = Math.cos(time * 0.6) * 0.13;
-      bacteria5.userData.particles.rotation.y = time * 0.32;
-      
-      // Animar luces para efecto de energía eléctrica
-      pointLight1.intensity = 1.5 + Math.sin(time * 2) * 0.3;
-      pointLight2.intensity = 1.2 + Math.cos(time * 1.5) * 0.3;
-      
+      b1.rotation.y += (targetRotY - b1.rotation.y) * 0.05;
+      b1.rotation.x += (targetRotX - b1.rotation.x) * 0.05;
+      b1.rotation.z += 0.002;
+      const s1 = 1 + Math.sin(bgTime) * 0.05;
+      b1.userData.body.scale.setScalar(s1);
+      b1.userData.pili.rotation.y = Math.sin(bgTime*.5)*.1;
+      b1.userData.particles.rotation.y = bgTime * .3;
+
+      b2.rotation.x += .003; b2.rotation.y += .005;
+      b2.position.y  = 3 + Math.sin(bgTime*.3)*.5;
+      b2.position.x  = 4 + Math.cos(bgTime*.2)*.3;
+      b2.userData.body.scale.setScalar(.8+Math.sin(bgTime*.8)*.03);
+      b2.userData.particles.rotation.y = bgTime*.4;
+
+      b3.rotation.x -= .002; b3.rotation.z += .004;
+      b3.position.y  = -2 + Math.cos(bgTime*.4)*.4;
+      b3.position.x  = -4 + Math.sin(bgTime*.3)*.2;
+      b3.userData.body.scale.setScalar(.7+Math.cos(bgTime*.7)*.03);
+      b3.userData.particles.rotation.y = bgTime*.35;
+
+      b4.rotation.y += .004; b4.rotation.x += .002;
+      b4.position.y  = -3 + Math.sin(bgTime*.35)*.5;
+      b4.position.x  =  5 + Math.cos(bgTime*.25)*.3;
+      b4.userData.body.scale.setScalar(.65+Math.sin(bgTime*.9)*.03);
+      b4.userData.particles.rotation.y = bgTime*.38;
+
+      b5.rotation.z -= .003; b5.rotation.y += .003;
+      b5.position.y  = 3.5 + Math.cos(bgTime*.45)*.4;
+      b5.position.x  = -5  + Math.sin(bgTime*.35)*.25;
+      b5.userData.body.scale.setScalar(.75+Math.cos(bgTime*.65)*.03);
+      b5.userData.particles.rotation.y = bgTime*.32;
+
+      pL1.intensity = 1.5 + Math.sin(bgTime*2)*.3;
+      pL2.intensity = 1.2 + Math.cos(bgTime*1.5)*.3;
+
       renderer.render(scene, camera);
     }
+    animateBg();
 
-    animate();
-
-    // Responsive
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      
-      // Ajustar cámara y escalas según tamaño de pantalla
-      adjustCameraForScreen();
-      
-      const newIsMobile = window.innerWidth < 768;
-      const newScaleMultiplier = newIsMobile ? 0.7 : 1;
-      
-      // Reajustar escalas de bacterias
-      bacteria1.scale.set(newScaleMultiplier, newScaleMultiplier, newScaleMultiplier);
-      bacteria2.scale.set(0.8 * newScaleMultiplier, 0.8 * newScaleMultiplier, 0.8 * newScaleMultiplier);
-      bacteria3.scale.set(0.7 * newScaleMultiplier, 0.7 * newScaleMultiplier, 0.7 * newScaleMultiplier);
-      bacteria4.scale.set(0.65 * newScaleMultiplier, 0.65 * newScaleMultiplier, 0.65 * newScaleMultiplier);
-      bacteria5.scale.set(0.75 * newScaleMultiplier, 0.75 * newScaleMultiplier, 0.75 * newScaleMultiplier);
+      adjustCamera();
+      const m = window.innerWidth < 768 ? 0.7 : 1;
+      b1.scale.setScalar(m); b2.scale.setScalar(.8*m); b3.scale.setScalar(.7*m);
+      b4.scale.setScalar(.65*m); b5.scale.setScalar(.75*m);
     });
 
-    // Start screen (opcional)
-    const startButton = document.getElementById('start-button');
+    // Start screen
+    const startBtn    = document.getElementById('start-button');
     const startScreen = document.getElementById('start-screen');
-    
-    if (startButton) {
-      startButton.addEventListener('click', () => {
+    if (startBtn) {
+      startBtn.addEventListener('click', () => {
         startScreen.style.opacity = '0';
-        setTimeout(() => {
-          startScreen.classList.add('hidden');
-        }, 500);
+        setTimeout(() => startScreen.classList.add('hidden'), 500);
       });
     }
+
+    // ════════════════════════════════════════════
+    //  BACTERIA FLOATING BUTTON (Canvas 2D)
+    // ════════════════════════════════════════════
+    const bactCanvas = document.getElementById('bact-canvas');
+    const bctx       = bactCanvas.getContext('2d');
+    const BW = bactCanvas.width, BH = bactCanvas.height;
+    const bcx = BW / 2, bcy = BH / 2;
+
+    // Pili data
+    const piliData = Array.from({ length: 32 }, (_, i) => ({
+      angle: (i / 32) * Math.PI * 2,
+      len:   28 + Math.random() * 22,
+      segs:  8,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.4 + Math.random() * 0.6
+    }));
+
+    // Magnetite particles
+    const btParticles = Array.from({ length: 18 }, () => ({
+      x: (Math.random() - 0.5) * 44,
+      y: (Math.random() - 0.5) * 60,
+      r: 2 + Math.random() * 2.5,
+      orbitSpeed: (Math.random() > 0.5 ? 1 : -1) * (0.3 + Math.random() * 0.5),
+      orbitPhase: Math.random() * Math.PI * 2
+    }));
+
+    let bt = 0;
+    function drawBtn() {
+      bctx.clearRect(0, 0, BW, BH);
+
+      // Outer glow
+      const glow = bctx.createRadialGradient(bcx, bcy, 28, bcx, bcy, 80);
+      glow.addColorStop(0,   'rgba(0,255,136,0.18)');
+      glow.addColorStop(0.6, 'rgba(0,204,255,0.07)');
+      glow.addColorStop(1,   'rgba(0,0,0,0)');
+      bctx.beginPath(); bctx.arc(bcx, bcy, 80, 0, Math.PI*2);
+      bctx.fillStyle = glow; bctx.fill();
+
+      // Pili
+      for (const p of piliData) {
+        const sr = 30;
+        const sx = bcx + Math.cos(p.angle) * sr;
+        const sy = bcy + Math.sin(p.angle) * sr;
+        bctx.beginPath(); bctx.moveTo(sx, sy);
+        for (let s = 1; s <= p.segs; s++) {
+          const prog = s / p.segs;
+          const wave = Math.sin(bt * p.speed + p.phase + s * 1.2) * (5 * (1 - prog));
+          const perp = p.angle + Math.PI / 2;
+          const dist = sr + p.len * prog;
+          bctx.lineTo(
+            bcx + Math.cos(p.angle) * dist + Math.cos(perp) * wave,
+            bcy + Math.sin(p.angle) * dist + Math.sin(perp) * wave
+          );
+        }
+        const alpha = 0.45 + 0.35 * Math.abs(Math.sin(bt * 0.8 + p.phase));
+        bctx.strokeStyle = `rgba(120,255,80,${alpha})`;
+        bctx.lineWidth   = 0.9;
+        bctx.shadowColor = '#00ff88'; bctx.shadowBlur = 4;
+        bctx.stroke();    bctx.shadowBlur = 0;
+      }
+
+      // Body
+      const breathe = 1 + Math.sin(bt * 1.2) * 0.025;
+      const bw2 = 30 * breathe, bh2 = 42 * breathe;
+      const bodyGrad = bctx.createRadialGradient(bcx-6, bcy-10, 2, bcx, bcy, 46);
+      bodyGrad.addColorStop(0,    'rgba(120,255,160,0.95)');
+      bodyGrad.addColorStop(0.45, 'rgba(60,200,100,0.88)');
+      bodyGrad.addColorStop(0.75, 'rgba(20,130,70,0.82)');
+      bodyGrad.addColorStop(1,    'rgba(0,60,40,0.7)');
+      bctx.beginPath(); bctx.ellipse(bcx, bcy, bw2, bh2, 0, 0, Math.PI*2);
+      bctx.fillStyle = bodyGrad; bctx.shadowColor = '#00ff88'; bctx.shadowBlur = 20;
+      bctx.fill(); bctx.shadowBlur = 0;
+
+      // Border
+      bctx.beginPath(); bctx.ellipse(bcx, bcy, bw2, bh2, 0, 0, Math.PI*2);
+      bctx.strokeStyle = 'rgba(0,255,136,0.7)'; bctx.lineWidth = 1.5;
+      bctx.shadowColor = '#00ff88'; bctx.shadowBlur = 8;
+      bctx.stroke(); bctx.shadowBlur = 0;
+
+      // Inner membrane
+      bctx.beginPath(); bctx.ellipse(bcx, bcy, bw2*.82, bh2*.82, 0, 0, Math.PI*2);
+      bctx.strokeStyle = 'rgba(180,255,200,0.2)'; bctx.lineWidth = 1; bctx.stroke();
+
+      // Specular
+      const spec = bctx.createRadialGradient(bcx-9, bcy-14, 0, bcx-9, bcy-14, 18);
+      spec.addColorStop(0, 'rgba(255,255,255,0.35)'); spec.addColorStop(1, 'rgba(255,255,255,0)');
+      bctx.beginPath(); bctx.ellipse(bcx-9, bcy-14, 14, 9, -0.5, 0, Math.PI*2);
+      bctx.fillStyle = spec; bctx.fill();
+
+      // Magnetite particles
+      for (const p of btParticles) {
+        const oa = bt * p.orbitSpeed + p.orbitPhase;
+        const px = bcx + p.x + Math.cos(oa) * 4;
+        const py = bcy + p.y + Math.sin(oa) * 3;
+        const pg = bctx.createRadialGradient(px-.5, py-.5, 0, px, py, p.r*1.8);
+        pg.addColorStop(0,   'rgba(255,230,80,0.95)');
+        pg.addColorStop(0.5, 'rgba(255,140,0,0.85)');
+        pg.addColorStop(1,   'rgba(180,60,0,0)');
+        bctx.beginPath(); bctx.arc(px, py, p.r, 0, Math.PI*2);
+        bctx.fillStyle = pg; bctx.shadowColor = '#ffaa00'; bctx.shadowBlur = 6;
+        bctx.fill(); bctx.shadowBlur = 0;
+      }
+
+      // Electric sparks
+      for (let s = 0; s < 4; s++) {
+        const sa  = (s/4)*Math.PI*2 + bt*0.7;
+        const sl  = 12 + Math.sin(bt*3+s)*6;
+        const alpha = 0.3 + 0.5*Math.abs(Math.sin(bt*4+s*1.5));
+        bctx.beginPath();
+        bctx.moveTo(bcx+Math.cos(sa)*(bw2+2),  bcy+Math.sin(sa)*(bh2+2));
+        bctx.lineTo(bcx+Math.cos(sa)*(bw2+sl), bcy+Math.sin(sa)*(bh2+sl));
+        bctx.strokeStyle = `rgba(0,220,255,${alpha})`;
+        bctx.lineWidth = 1.2; bctx.shadowColor = '#00ccff'; bctx.shadowBlur = 5;
+        bctx.stroke(); bctx.shadowBlur = 0;
+      }
+
+      bt += 0.035;
+      requestAnimationFrame(drawBtn);
+    }
+    drawBtn();
+
+    // ── FLOATING MOVEMENT ──
+    const btn    = document.getElementById('bacteria-btn');
+    const BTN_SIZE = 110;
+    let posX = window.innerWidth  / 2 - BTN_SIZE / 2;
+    let posY = window.innerHeight / 2 - BTN_SIZE / 2;
+    let velX = 1.1, velY = 0.8;
+    btn.style.left = posX + 'px';
+    btn.style.top  = posY + 'px';
+
+    let isDragging = false, dragOffX = 0, dragOffY = 0;
+
+    function floatLoop() {
+      if (!isDragging) {
+        posX += velX; posY += velY;
+        const maxX = window.innerWidth  - BTN_SIZE - 10;
+        const maxY = window.innerHeight - BTN_SIZE - 40;
+        if (posX <= 5)    { posX = 5;    velX =  Math.abs(velX); }
+        if (posX >= maxX) { posX = maxX; velX = -Math.abs(velX); }
+        if (posY <= 5)    { posY = 5;    velY =  Math.abs(velY); }
+        if (posY >= maxY) { posY = maxY; velY = -Math.abs(velY); }
+        velX += (Math.random() - 0.5) * 0.04;
+        velY += (Math.random() - 0.5) * 0.04;
+        const speed = Math.hypot(velX, velY);
+        if (speed > 2.2) { velX = velX/speed*2.2; velY = velY/speed*2.2; }
+        if (speed < 0.5) { velX *= 1.05; velY *= 1.05; }
+        btn.style.left = posX + 'px';
+        btn.style.top  = posY + 'px';
+      }
+      requestAnimationFrame(floatLoop);
+    }
+    floatLoop();
+
+    // Drag — mouse
+    let downX = 0, downY = 0, didDrag = false;
+
+    btn.addEventListener('mousedown', e => {
+      e.preventDefault();
+      isDragging = true; didDrag = false;
+      dragOffX = e.clientX - posX; dragOffY = e.clientY - posY;
+      downX = e.clientX; downY = e.clientY;
+      btn.style.cursor = 'grabbing';
+    });
+    document.addEventListener('mousemove', e => {
+      if (!isDragging) return;
+      if (Math.abs(e.clientX-downX)>5 || Math.abs(e.clientY-downY)>5) didDrag = true;
+      posX = e.clientX - dragOffX; posY = e.clientY - dragOffY;
+      btn.style.left = posX+'px'; btn.style.top = posY+'px';
+    });
+    document.addEventListener('mouseup', () => {
+      if (!isDragging) return;
+      isDragging = false; btn.style.cursor = 'grab';
+    });
+
+    // Drag — touch
+    btn.addEventListener('touchstart', e => {
+      e.preventDefault();
+      const t = e.touches[0];
+      isDragging = true; didDrag = false;
+      dragOffX = t.clientX - posX; dragOffY = t.clientY - posY;
+      downX = t.clientX; downY = t.clientY;
+    }, { passive: false });
+    document.addEventListener('touchmove', e => {
+      if (!isDragging) return;
+      const t = e.touches[0];
+      if (Math.abs(t.clientX-downX)>8 || Math.abs(t.clientY-downY)>8) didDrag = true;
+      posX = t.clientX - dragOffX; posY = t.clientY - dragOffY;
+      btn.style.left = posX+'px'; btn.style.top = posY+'px';
+    }, { passive: true });
+    document.addEventListener('touchend', () => { isDragging = false; });
+
+    // Click → navigate
+    btn.addEventListener('click', () => {
+      if (didDrag) return;
+      window.open('https://jesus111112.github.io/energia_por_bacterias/nanobot.html', '_blank');
+    });
+    btn.addEventListener('touchend', () => {
+      if (!didDrag) {
+        window.open('https://jesus111112.github.io/energia_por_bacterias/nanobot.html', '_blank');
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      posX = Math.min(posX, window.innerWidth  - BTN_SIZE - 10);
+      posY = Math.min(posY, window.innerHeight - BTN_SIZE - 40);
+    });
   </script>
 </body>
 </html>
