@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
 
   // ── CORS: solo permite tu GitHub Pages ──
   res.setHeader("Access-Control-Allow-Origin", "https://jesus111112.github.io");
@@ -77,4 +77,5 @@ INSTRUCCIONES: Responde SIEMPRE en español. Máximo 150 palabras. Usa emojis ci
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 }
+
 
