@@ -690,9 +690,15 @@
     }, { passive: true });
     document.addEventListener('touchend', () => { isDragging = false; });
 
-    // Click → navigate same window
+    // Click → navigate via relative link
     btn.addEventListener('click', () => {
-      <a href="nanobot.html">Abrir</a>
+      if (didDrag) return;
+      window.location.href = 'nanobot.html';
+    });
+    btn.addEventListener('touchend', () => {
+      if (!didDrag) {
+        window.location.href = 'nanobot.html';
+      }
     });
 
     window.addEventListener('resize', () => {
